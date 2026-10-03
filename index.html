@@ -544,6 +544,13 @@
     .log-card .l-badge { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 700; color: #fff; }
     .log-card .l-summary { font-size: 13px; color: var(--ink); margin-top: 6px; white-space: pre-wrap; }
     .log-card .l-meta { font-size: 11px; color: var(--sub); margin-top: 6px; }
+    /* T-452 閲覧の記録: 長いメールアドレスで 375px を押し広げない・断った試みは既存の --bad と文字のバッジで示す（色だけに頼らない） */
+    .log-card .l-who { font-size: 13px; color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+    .log-card.acc-denied { --gc: var(--bad); }
+    .log-card .l-badge.acc-denied-badge { background: var(--badge-bad); }
+    #accessLog .chart-group { margin-top: 14px; }
+    #accessLog .l-head > span { max-width: 100%; overflow-wrap: anywhere; min-width: 0; }
+    #accessLog details > summary { cursor: pointer; font-size: 13px; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
 
     @media (max-width: 480px) {
       .wrap { padding: 12px 11px 32px; }
@@ -1051,12 +1058,18 @@
       <h2 class="sec">送信ログ（LINE 通知の履歴）</h2>
       <p class="settings-note">朝・週次の通知の結果を新しい順に表示します。実際に送信した行だけでなく、<strong>送らなかった行（当日送信済み・記録なし・宛先未設定など）も残ります</strong>（T-218＝「通知が来なかった理由」を後から追えるようにするため）。同じ対象日が複数行になることがあります（再送・失敗→成功・スキップなど）。週次サマリーの行は「今週のサマリー…」と表示されます。</p>
       <div id="notifLog" class="msglog"><!-- JS で描画 --></div>
+      <!-- T-452/DEC-081: 閲覧の記録（所有者だけに表示・サーバも所有者以外には返さない） -->
+      <div id="accessLogWrap" hidden>
+        <h2 class="sec">閲覧の記録</h2>
+        <p class="settings-note">ダッシュボードを開いた人と時刻です（同じ人の同じ操作は 10 分に 1 回だけ記録・断られた試みも記録）。この欄は所有者にだけ表示されます。</p>
+        <div id="accessLog" class="msglog"><!-- JS で描画 --></div>
+      </div>
     </section>
 
     <!-- T-412: 指標を増やすほど「医療的な判定」と受け取られる面積が広がるため、性格を明示する（PLAN-T412 §8-6）。 -->
     <footer class="page">
       <p class="foot-note">ジーナ式スケジュールと照らして<strong>翌日の調整案を考えるための記録ツール</strong>です。診断・治療を目的とするものではありません。気になることは健診・かかりつけの医師や助産師にご相談ください。</p>
-      <p class="foot-meta">タイムゾーン Asia/Tokyo ／ 見られるのは登録した Google アカウントだけです。ログインしたままの端末を人に渡さないでください</p>
+      <p class="foot-meta">タイムゾーン Asia/Tokyo ／ 見られるのは Google でログインした方です（範囲は所有者が設定します）。開いた人と時刻は記録されます。ログインしたままの端末を人に渡さないでください</p>
     </footer>
   </div>
 
@@ -2099,10 +2112,58 @@
           }
           box.innerHTML = '';
           var canWrite = !!res.canWrite;  // 書込可否（書込ポリシー評価・サーバが真の防御・DEC-029）
+          if (res.isOwner) { try { loadAccessLog(); } catch (eA) { /* 閲覧の記録の失敗は致命的でない */ } }
           Object.keys(res.settings).forEach(function (key) { box.appendChild(settingRow(key, res.settings[key], canWrite)); });
         })
-        .withFailureHandler(function () { box.textContent = '設定の取得に失敗しました。'; })
+        .withFailureHandler(function (e) {
+          // T-452: 公開の閲覧者は設定を見られない（閲覧だけ）。ログアウトはさせない
+          box.textContent = (e && e.reason === 'readonly') ? 'このアカウントは閲覧だけです。設定・予定・メモ・改善要望は登録した方だけが使えます。' : '設定の取得に失敗しました。';
+          if (e && e.reason === 'readonly') { var fb = el('fbBtn'); if (fb) fb.disabled = true; }
+        })
         .getSettingsStatus();
+    }
+
+    // ---- 閲覧の記録（T-452・所有者だけ） ----
+    var ACCESS_ACTION_JA = { whoami: 'ログイン', dashboard: '画面を開いた', sleep: '睡眠タブ', listCareBoard: '予定・メモ',
+      docs: 'ドキュメント', accessLog: '閲覧の記録', getSettingsStatus: '設定', saveSetting: '設定の保存', submitFeedback: '改善要望',
+      refreshFeedNow: '手動の取り込み', addCalendarEntry: '予定の追加', setCalendarStatus: '予定の更新', addMemo: 'メモの追加',
+      setMemoStatus: 'メモの更新', setMemoQty: 'メモの数量', '(unknown)': '不明な操作' };
+    var ACCESS_ROLE_JA = { owner: '所有者', viewer: '閲覧者リスト', public: '公開の閲覧', denied: '断った' };
+    function accessWhen(iso) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(iso || ''));
+      return m ? (Number(m[2]) + '/' + Number(m[3]) + ' ' + m[4] + ':' + m[5]) : String(iso || '');
+    }
+    function accessCard(head, who, meta, denied) {
+      return '<div class="log-card' + (denied ? ' acc-denied' : '') + '"><div class="l-head"><span class="l-date">' + escHtml(head) + '</span>'
+        + (who ? '<span class="l-who">' + escHtml(who) + '</span>' : '')
+        + (denied ? '<span class="l-badge acc-denied-badge">断った</span>' : '') + '</div>'
+        + '<div class="l-meta">' + escHtml(meta) + '</div></div>';
+    }
+    function renderAccessLog(res) {
+      var box = el('accessLog'), wrap = el('accessLogWrap');
+      if (!box || !wrap) return;
+      wrap.hidden = false;
+      if (!res || !res.ok) { box.textContent = '閲覧の記録を読み込めませんでした。'; return; }
+      var h = ['<p class="settings-note">公開の閲覧: <strong>' + (res.publicView ? 'オン（Google アカウントなら誰でも閲覧だけできます）' : 'オフ（登録した方だけが閲覧できます）') + '</strong></p>'];
+      if (!res.entries || !res.entries.length) { h.push('<p class="settings-note">まだ記録はありません。</p>'); box.innerHTML = h.join(''); return; }
+      h.push('<h3 class="chart-group">人ごと</h3>');
+      (res.people || []).forEach(function (p) {
+        h.push(accessCard(p.email, '', (ACCESS_ROLE_JA[p.role] || p.role) + '・' + p.count + ' 回・最後 ' + accessWhen(p.last), p.role === 'denied'));
+      });
+      var FIRST = 20;   // スマホで縦に長くしすぎない（残りは畳む・uiux m-5）
+      h.push('<h3 class="chart-group">新しい順（' + res.entries.length + ' 件）</h3>');
+      var cards = res.entries.map(function (x) {
+        return accessCard(accessWhen(x.at), x.email, (ACCESS_ACTION_JA[x.action] || x.action) + '・' + (ACCESS_ROLE_JA[x.role] || x.role), x.role === 'denied');
+      });
+      h.push('<div class="msglog">' + cards.slice(0, FIRST).join('') + '</div>');
+      if (cards.length > FIRST) h.push('<details><summary>残り ' + (cards.length - FIRST) + ' 件を見る</summary><div class="msglog">' + cards.slice(FIRST).join('') + '</div></details>');
+      box.innerHTML = h.join('');
+    }
+    function loadAccessLog() {
+      google.script.run
+        .withSuccessHandler(renderAccessLog)
+        .withFailureHandler(function () { renderAccessLog(null); })
+        .accessLog(100);
     }
 
     function settingRow(key, meta, canWrite) {

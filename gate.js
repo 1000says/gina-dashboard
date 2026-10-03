@@ -41,7 +41,7 @@
 
   /**
    * API の応答を分類する（純粋関数）。
-   * @return {'ok'|'login'|'denied'|'error'}
+   * @return {'ok'|'login'|'denied'|'readonly'|'error'}
    *   login＝トークンが無い・切れた・不正（ログインし直せば通る）
    *   denied＝本人確認はできたが閲覧者リストに無い（ログインし直しても通らない）
    */
@@ -50,6 +50,8 @@
     if (res.ok === true) return 'ok';
     if (res.reason === 'auth_required') return 'login';
     if (res.reason === 'not_allowed') return 'denied';
+    // T-452: 公開の閲覧者（閲覧者リストに無い人）が書く・設定の操作をした＝ログアウトさせない
+    if (res.reason === 'read_only') return 'readonly';
     return 'error';
   }
 
