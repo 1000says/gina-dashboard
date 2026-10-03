@@ -709,6 +709,12 @@
     .sl-sw.d { background: var(--warn); }
     .sl-sw.o { background: var(--accent-soft); border: 1.5px dashed var(--pred); }
     .chart-card .sl-fc-msg { margin: 8px 0 0; font-size: 13px; color: var(--sub); }
+    /* ==== 成長の記録（T-454）= ミルク・おむつタブ。部品は既存（.week-kpi・.kpi-card・.seg・.sl-ctl・.charts・.chart-card）をそのまま使い、
+       ここは**余白だけ**（色・文字色は持たない＝T-418 の面 × テーマ検査に新しい規則を足さない）。 */
+    #growthBest { margin-top: 10px; }
+    #growthBest[hidden], #growthCharts[hidden] { display: none; }   /* display: grid が hidden 属性に勝つため */
+    #growthBody .sl-ctl { margin-top: 18px; }
+    #growthNote { margin-top: 12px; }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; } }
   </style>
 </head>
@@ -834,6 +840,57 @@
       <div id="intakeCards" class="week-kpi"><!-- JS で描画（renderIntake） --></div>
       <figure id="intakeChart" class="intake-chart" hidden><!-- JS で描画（体重の推移） --></figure>
       <p id="intakeNote" class="settings-note"><!-- JS で描画（目安の注記） --></p>
+      <!-- T-454: 成長の記録。**良否を判定しない**（P-07）＝直近 7 日の平均と 4 週間前の 7 日との差・これまでのいちばんの事実だけ。
+           payload（API の feedGrowth）は初めてこのタブを開いたときだけ取りに行く。週齢・生年月日は payload に無い。 -->
+      <h2 class="sec">成長の記録</h2>
+      <div id="growthState" class="empty" role="status" aria-live="polite">読み込んでいます</div>
+      <div id="growthBody" hidden>
+        <p id="growthKpiNote" class="asof-note">直近7日の平均と、4週間前の7日との差です</p>
+        <div id="growthKpi" class="week-kpi"><!-- JS で描画（renderGrowthKpi） --></div>
+        <div id="growthBest" class="week-kpi" hidden><!-- JS で描画（renderGrowthBest） --></div>
+        <div class="sl-ctl">
+          <div class="sl-ctl-row"><span class="asof-note">期間</span>
+            <div class="seg" role="group" aria-label="成長の記録の期間" id="growthRangeSeg">
+              <button type="button" data-range="4w" aria-pressed="false">4週</button>
+              <button type="button" data-range="8w" aria-pressed="true">8週</button>
+              <button type="button" data-range="all" aria-pressed="false">全部</button>
+            </div></div>
+          <div class="sl-ctl-row"><span class="asof-note">単位</span>
+            <div class="seg" role="group" aria-label="成長の記録の集計の単位" id="growthUnitSeg">
+              <button type="button" data-unit="day" aria-pressed="true">日</button>
+              <button type="button" data-unit="week" aria-pressed="false">週</button>
+            </div></div>
+        </div>
+        <div id="growthChartsMsg" class="empty" hidden><!-- JS で描画（グラフにできる日が無い・読み込み失敗） --></div>
+        <div id="growthCharts" class="charts">
+          <div class="chart-card">
+            <h3>1回の量</h3>
+            <p class="hint">実線＝中央値／破線＝1回の最大（mL）</p>
+            <div class="chart-box"><canvas id="cGrPer" role="img" aria-label="1回の量の推移"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>夜のいちばん長い授乳の間隔</h3>
+            <p class="hint">夕方18:30〜朝6:00にかかる授乳と授乳の間の最大（時間）</p>
+            <div class="chart-box"><canvas id="cGrNight" role="img" aria-label="夜のいちばん長い授乳の間隔の推移"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>日中の授乳の間隔</h3>
+            <p class="hint">朝6:00〜夕方18:30に始まった授乳と授乳の間の中央値（時間）</p>
+            <div class="chart-box"><canvas id="cGrDay" role="img" aria-label="日中の授乳の間隔の推移"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>1日の授乳回数</h3>
+            <p class="hint">棒＝その日に始まった授乳の回数（回）</p>
+            <div class="chart-box"><canvas id="cGrCount" role="img" aria-label="1日の授乳回数の推移"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>1日のミルクの量</h3>
+            <p class="hint">母乳や量の無い記録がある日は出していません（mL）</p>
+            <div class="chart-box"><canvas id="cGrMl" role="img" aria-label="1日のミルクの量の推移"></canvas></div>
+          </div>
+        </div>
+        <p id="growthNote" class="settings-note">1回＝最初の授乳から30分以内の授乳（足しミルク・2本目）をまとめたもの。1回の量は母乳や量の無い記録を含まない回だけです。夜の間隔＝夕方18:30〜朝6:00にかかる授乳と授乳の間。いちばんは直近120日の記録の中で見ています。</p>
+      </div>
       <h2 class="sec">おむつ</h2>
       <div id="careDiaper" class="week-kpi"><!-- JS で描画 --></div>
       <p id="careNote" class="settings-note"><!-- JS で描画（確度と最終学習日時） --></p>
@@ -2124,7 +2181,7 @@
     }
 
     // ---- 閲覧の記録（T-452・所有者だけ） ----
-    var ACCESS_ACTION_JA = { whoami: 'ログイン', dashboard: '画面を開いた', sleep: '睡眠タブ', listCareBoard: '予定・メモ',
+    var ACCESS_ACTION_JA = { whoami: 'ログイン', dashboard: '画面を開いた', sleep: '睡眠タブ', feedGrowth: '成長の記録', listCareBoard: '予定・メモ',
       docs: 'ドキュメント', accessLog: '閲覧の記録', getSettingsStatus: '設定', saveSetting: '設定の保存', submitFeedback: '改善要望',
       refreshFeedNow: '手動の取り込み', addCalendarEntry: '予定の追加', setCalendarStatus: '予定の更新', addMemo: 'メモの追加',
       setMemoStatus: 'メモの更新', setMemoQty: 'メモの数量', '(unknown)': '不明な操作' };
@@ -3547,6 +3604,282 @@
       return hit;
     }
 
+    // ---- 成長の記録（T-454・ミルク・おむつタブ） ----
+    // payload（API の feedGrowth＝src/intake.js の buildFeedGrowth）は**タブを初めて開いたときだけ**取りに行く。
+    // 良否は判定しない（P-07）: 直近 7 日の平均・4 週間前の 7 日との差（事実の数字）・これまでのいちばんだけ。差の色は中立の --sub。
+    // 集計（1 回へのまとめ・平均・差・いちばん）はサーバが確定したものを描くだけ（述語を複製しない）。週齢・生年月日は payload に無い。
+    // 時間の表記（slDur 等）・折れ線の作り（slLine 等）は睡眠タブと同じ部品を使う。
+    var GROWTH = null;                // 受け取った payload（ok かつ empty でないときだけ入る）
+    var growthLoaded = false;         // 初回表示で 1 回だけ取りに行く（失敗・記録なしは loadGrowthTab が false へ戻す）
+    var growthCharts = [];            // 推移グラフ（自前 destroy）
+    var GR_RANGE = '8w', GR_UNIT = 'day';
+    var GR_RANGE_DAYS = { '4w': 28, '8w': 56, all: 0 };   // 0＝全部
+    var GR_RANGE_JA = { '4w': '直近4週', '8w': '直近8週', all: '全期間' };
+    var GR_UNIT_JA = { day: '日ごと', week: '週ごと' };
+    var GR_PREF_KEY = { range: 'gina.growth.range', unit: 'gina.growth.unit' };
+    var GR_WIRED = false, GR_THEME_STALE = false;
+    var GR_TILES = [
+      { key: 'perFeedMedianMl', label: '1回の量（中央値）', kind: 'ml' },
+      { key: 'perFeedMaxMl', label: '1回の最大', kind: 'ml' },
+      { key: 'nightGapMaxMin', label: '夜のいちばん長い間隔', kind: 'min' },
+      { key: 'dayGapMedianMin', label: '日中の授乳の間隔', kind: 'min' },
+      { key: 'sittings', label: '1日の授乳回数', kind: 'count' },
+      { key: 'dailyMl', label: '1日のミルクの量', kind: 'ml' }
+    ];
+
+    /** 値 → 大きな数字（HTML・単位だけ小さく）。kind: ml／min（X時間Y分）／count（回・小数 1 桁）。 */
+    function grNum(v, kind) {
+      if (v == null || isNaN(v)) return '—';
+      if (kind === 'min') return slDurHtml(v);
+      if (kind === 'count') return escHtml(Math.round(v * 10) / 10) + '<span class="sl-u">回</span>';
+      return escHtml(Math.round(v)) + '<span class="sl-u">mL</span>';
+    }
+    /** 値 → 文字（グラフの軸・読み上げ・ツールチップ）。 */
+    function grText(v, kind) {
+      if (v == null || isNaN(v)) return '—';
+      if (kind === 'min') return slDur(v);
+      if (kind === 'count') return (Math.round(v * 10) / 10) + '回';
+      return Math.round(v) + ' mL';
+    }
+    /** 差（符号つき）。 */
+    function grSigned(d, kind) {
+      if (kind === 'min' || kind === 'count') return slSigned(d, kind);
+      var t = Math.round(d);
+      return (t > 0 ? '+' : (t < 0 ? '−' : '')) + Math.abs(t) + ' mL';
+    }
+    function grSame(d, kind) { return kind === 'count' ? Math.abs(d) < 0.05 : Math.round(d) === 0; }
+    function grAddDays(iso, n) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(esc(iso));
+      return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + n)).toISOString().slice(0, 10) : '';
+    }
+
+    // -- 直近 7 日の平均（4 週間前の 7 日との差） --
+    function renderGrowthKpi() {
+      var box = el('growthKpi');
+      if (!box || !GROWTH) return;
+      var R = GROWTH.recent || {}, C = GROWTH.change || {}, N = GROWTH.recentDays || 7, W = Math.round((GROWTH.offsetDays || 28) / 7);
+      var note = el('growthKpiNote');
+      if (note) note.textContent = '直近' + N + '日の平均と、' + W + '週間前の' + N + '日との差です';
+      box.innerHTML = GR_TILES.map(function (t) {
+        var v = R[t.key], d = C[t.key], delta;
+        if (v == null) delta = '直近' + N + '日は記録が少なく、平均を出していません';
+        else if (d == null) delta = W + '週間前は記録が少なく、比べていません';
+        else if (grSame(d, t.kind)) delta = W + '週間前と同じ';
+        else delta = W + '週間前より ' + grSigned(d, t.kind);
+        return '<div class="kpi-card"><div class="k-label">' + escHtml(t.label) + '</div>'
+          + '<div class="k-value u-tnum">' + grNum(v, t.kind) + '</div>'
+          + '<div class="k-sub">測れた日 ' + escHtml(R[t.key + 'Days'] == null ? 0 : R[t.key + 'Days']) + ' 日</div>'
+          + '<div class="k-delta">' + escHtml(delta) + '</div></div>';
+      }).join('');
+    }
+
+    // -- これまでのいちばん（null は出さない） --
+    function renderGrowthBest() {
+      var box = el('growthBest');
+      if (!box || !GROWTH) return;
+      var B = GROWTH.best || {}, h = [];
+      function card(label, numHtml, date) {
+        return '<div class="kpi-card"><div class="k-label">' + escHtml(label) + '</div><div class="k-value u-tnum">' + numHtml + '</div>'
+          + '<div class="k-sub">' + escHtml(shortDate(date)) + ' の記録</div></div>';
+      }
+      if (B.perFeedMaxMl && B.perFeedMaxMl.value != null) h.push(card('いちばん多く飲んだ1回', grNum(B.perFeedMaxMl.value, 'ml'), B.perFeedMaxMl.date));
+      if (B.nightGapMaxMin && B.nightGapMaxMin.value != null) h.push(card('いちばん長く空いた夜', grNum(B.nightGapMaxMin.value, 'min'), B.nightGapMaxMin.date));
+      box.innerHTML = h.join('');
+      box.hidden = !h.length;
+    }
+
+    // -- 推移グラフ（期間と単位） --
+    function grPrefGet(k, allowed, dflt) {
+      try { var v = window.sessionStorage.getItem(GR_PREF_KEY[k]); return allowed.indexOf(v) >= 0 ? v : dflt; } catch (e) { return dflt; }
+    }
+    function grPrefSet(k, v) { try { window.sessionStorage.setItem(GR_PREF_KEY[k], v); } catch (e) { /* 保存できなくても表示は続ける */ } }
+    function renderGrowthControls() {
+      ['growthRangeSeg', 'growthUnitSeg'].forEach(function (id) {
+        var seg = el(id);
+        if (!seg) return;
+        var bs = seg.querySelectorAll('button');
+        for (var i = 0; i < bs.length; i++) {
+          var v = bs[i].getAttribute('data-range') || bs[i].getAttribute('data-unit');
+          bs[i].setAttribute('aria-pressed', v === (id === 'growthRangeSeg' ? GR_RANGE : GR_UNIT) ? 'true' : 'false');
+        }
+      });
+    }
+    /** 選んだ期間・単位の点（日は daily を末尾から切る／週は期間に重なる週だけ）。m＝その点の指標（null は測れない）。 */
+    function grPoints() {
+      var G = GROWTH || {}, daily = G.daily || [], days = GR_RANGE_DAYS[GR_RANGE];
+      var cut = days ? daily.slice(-days) : daily;
+      if (GR_UNIT === 'day') {
+        return cut.map(function (r) { return { label: shortDate(r.date), title: slMD(r.date), m: r }; });
+      }
+      var from = cut.length ? cut[0].date : null;
+      return (G.week || []).filter(function (g) { return from != null && grAddDays(g.key, 6) >= from; }).map(function (g) {
+        return { label: shortDate(g.key) + '〜', title: shortDate(g.key) + '〜' + shortDate(grAddDays(g.key, 6)) + ' の平均（' + (g.sittingsDays == null ? 0 : g.sittingsDays) + ' 日）', m: g };
+      });
+    }
+    function grSetAria(id, name, vals, kind, pts) {
+      var c = el(id);
+      if (!c) return;
+      var got = [];
+      vals.forEach(function (v, i) { if (v != null) got.push({ v: v, i: i }); });
+      var base = name + 'の推移（' + GR_UNIT_JA[GR_UNIT] + '・' + GR_RANGE_JA[GR_RANGE] + '）';
+      if (!got.length) { c.setAttribute('aria-label', base + '。値のある区間はありません'); return; }
+      var last = got[got.length - 1], vs = got.map(function (g) { return g.v; });
+      c.setAttribute('aria-label', base + '。最新 ' + pts[last.i].title + ' ' + grText(last.v, kind) + '、最小 ' + grText(Math.min.apply(null, vs), kind) + '、最大 ' + grText(Math.max.apply(null, vs), kind));
+    }
+    /** 時間の軸の区切り（値の幅に合わせる）。 */
+    function grStep(vals) {
+      var v = vals.filter(function (x) { return x != null; });
+      if (!v.length) return 60;
+      var span = Math.max.apply(null, v) - Math.min.apply(null, v);
+      return span <= 180 ? 30 : (span <= 600 ? 60 : 120);
+    }
+
+    function renderGrowthCharts() {
+      var box = el('growthCharts'), msg = el('growthChartsMsg'), panel = el('tab-milk');
+      if (!box || !GROWTH) return;
+      // 非表示中は canvas の高さが 0 になるため描かない（表示されたとき GR_THEME_STALE で描き直す）
+      if (panel && panel.hidden) { GR_THEME_STALE = true; return; }
+      slDestroy(growthCharts); growthCharts = [];
+      var pts = grPoints();
+      var keys = ['perFeedMedianMl', 'perFeedMaxMl', 'nightGapMaxMin', 'dayGapMedianMin', 'sittings', 'dailyMl'];
+      var note = '';
+      if (!window.Chart) note = 'グラフの読み込みに失敗しました。通信環境を確認して再読み込みしてください。';
+      else if (!pts.length || !slAny([].concat.apply([], keys.map(function (k) { return slSeries(pts, k); })))) note = 'この期間にグラフにできる日がまだありません。';
+      if (note) { if (msg) { msg.textContent = note; msg.hidden = false; } box.hidden = true; return; }
+      if (msg) msg.hidden = true;
+      box.hidden = false;
+      applyChartDefaults();
+      var accent = cssVar('--accent'), pred = cssVar('--pred');
+      var labels = pts.map(function (p) { return p.label; });
+      var tCb = slTitleCb(pts);
+      var tip = function (o, cbs) { o.plugins.tooltip.callbacks = Object.assign({ title: tCb }, cbs); };
+      var unitTitle = function (o, text) { o.scales.y.title = { display: true, text: text }; };
+
+      // 1. 1回の量（折れ線 2 本・同じ単位 mL・中央値＝実線／最大＝破線）
+      var medS = slSeries(pts, 'perFeedMedianMl'), maxS = slSeries(pts, 'perFeedMaxMl');
+      grSetAria('cGrPer', '1回の量（中央値）', medS, 'ml', pts);
+      growthCharts.push(new Chart(el('cGrPer'), {
+        type: 'line',
+        data: { labels: labels, datasets: [
+          slLine(medS, accent, '中央値'),
+          Object.assign(slLine(maxS, pred, '1回の最大'), { borderDash: [5, 4], pointStyle: 'rectRot', pointRadius: 3 })
+        ] },
+        options: baseOpts(function (o) {
+          o.plugins.legend = { display: true, position: 'bottom', labels: { boxWidth: 12, padding: 12 } };
+          unitTitle(o, 'mL');
+          tip(o, { label: function (c) { return c.dataset.label + ' ' + grText(c.parsed.y, 'ml'); } });
+        })
+      }));
+
+      // 2. 夜のいちばん長い授乳の間隔（折れ線・時間表示）／3. 日中の授乳の間隔（折れ線・時間表示）
+      [['cGrNight', 'nightGapMaxMin', '夜のいちばん長い授乳の間隔'], ['cGrDay', 'dayGapMedianMin', '日中の授乳の間隔']].forEach(function (c) {
+        var s = slSeries(pts, c[1]);
+        grSetAria(c[0], c[2], s, 'min', pts);
+        growthCharts.push(new Chart(el(c[0]), {
+          type: 'line',
+          data: { labels: labels, datasets: [slLine(s, accent, c[2])] },
+          options: baseOpts(function (o) {
+            slDurAxis(o, grStep(s));
+            // uiux M1: ほぼ変わらない値が大きく動いて見えないよう、縦軸は少なくとも 2 時間の幅をとる
+            var vs = s.filter(function (v) { return v != null; });
+            if (vs.length) {
+              var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
+              if (hi - lo < 120) { var mid = (lo + hi) / 2; o.scales.y.suggestedMin = Math.max(0, Math.floor((mid - 60) / 30) * 30); o.scales.y.suggestedMax = Math.ceil((mid + 60) / 30) * 30; }
+            }
+            tip(o, { label: function (x) { return c[2] + ' ' + slDur(x.parsed.y); } });
+          })
+        }));
+      });
+
+      // 4. 1日の授乳回数（棒）／5. 1日のミルクの量（棒・量の無い記録がある日は棒を出さない）
+      [['cGrCount', 'sittings', '1日の授乳回数', 'count', '回'], ['cGrMl', 'dailyMl', '1日のミルクの量', 'ml', 'mL']].forEach(function (c) {
+        var s = slSeries(pts, c[1]);
+        grSetAria(c[0], c[2], s, c[3], pts);
+        growthCharts.push(new Chart(el(c[0]), {
+          type: 'bar',
+          data: { labels: labels, datasets: [Object.assign(barDataset(s, accent), { label: c[2] })] },
+          options: baseOpts(function (o) {
+            o.scales.y.min = 0;
+            if (c[3] === 'count') { o.scales.y.ticks.stepSize = 1; o.scales.y.ticks.precision = 0; }
+            unitTitle(o, c[4]);
+            tip(o, { label: function (x) { return c[2] + ' ' + grText(x.parsed.y, c[3]); } });
+          })
+        }));
+      });
+      GR_THEME_STALE = false;
+    }
+    function grRedraw() {
+      try { renderGrowthCharts(); } catch (e) { /* 1 面の失敗で他を止めない */ }
+    }
+    /** 初回の描画のときだけ: 保存した選択を戻し、ボタンとテーマ切替を配線する。 */
+    function setupGrowthControls() {
+      if (GR_WIRED) return;
+      GR_WIRED = true;
+      GR_RANGE = grPrefGet('range', Object.keys(GR_RANGE_DAYS), GR_RANGE);
+      GR_UNIT = grPrefGet('unit', ['day', 'week'], GR_UNIT);
+      function wire(id, attr, set) {
+        var seg = el(id);
+        if (!seg) return;
+        var bs = seg.querySelectorAll('button');
+        for (var i = 0; i < bs.length; i++) {
+          (function (b) {
+            b.addEventListener('click', function () {
+              set(b.getAttribute(attr));
+              renderGrowthControls();
+              grRedraw();
+            });
+          })(bs[i]);
+        }
+      }
+      wire('growthRangeSeg', 'data-range', function (v) { GR_RANGE = v; grPrefSet('range', v); });
+      wire('growthUnitSeg', 'data-unit', function (v) { GR_UNIT = v; grPrefSet('unit', v); });
+      // OS のテーマが変わったら描き直す（軸・点の色はテーマ変数から読む）。非表示中は表示されたときに描き直す
+      var panel = el('tab-milk');
+      function redrawTheme() {
+        if (!GROWTH || !panel) return;
+        if (panel.hidden) { GR_THEME_STALE = true; return; }
+        grRedraw();
+      }
+      if (window.matchMedia) {
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+        if (mq.addEventListener) mq.addEventListener('change', redrawTheme);
+        else if (mq.addListener) mq.addListener(redrawTheme);
+      }
+      if (panel && typeof MutationObserver === 'function') {
+        new MutationObserver(function () { if (!panel.hidden && GR_THEME_STALE) redrawTheme(); }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+      }
+    }
+    function renderGrowthAll() {
+      setupGrowthControls();
+      [renderGrowthKpi, renderGrowthBest, renderGrowthControls].forEach(function (f) {
+        try { f(); } catch (e) { /* 1 つの面の失敗で他の面を止めない */ }
+      });
+      // グラフは書体の読み込み後に描く（睡眠タブと同じ理由: 代替書体で測った文字幅を Chart.js が覚えるため）。読み込み後に書体が変わった場合は watchFonts が作り直す。
+      (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () { if (GROWTH) grRedraw(); });
+    }
+    /** 成長の記録の payload を取りに行く（初めてミルク・おむつタブを開いたときだけ呼ばれる）。 */
+    function loadGrowthTab() {
+      var st = el('growthState'), body = el('growthBody');
+      var FAIL = '成長の記録を読み込めませんでした';
+      function show(text) { if (st) { st.hidden = false; st.textContent = text; } if (body) body.hidden = true; }
+      function again(text) { growthLoaded = false; GROWTH = null; show(text); }   // 次に開いたとき取り直す
+      show('読み込んでいます');
+      if (!(window.google && google.script && google.script.run)) { again(FAIL); return; }
+      google.script.run
+        .withSuccessHandler(function (p) {
+          try {
+            if (!p || p.ok !== true) { again(FAIL); return; }
+            if (p.empty) { again('授乳の記録がまだありません'); return; }
+            GROWTH = p;
+            if (st) st.hidden = true;
+            if (body) body.hidden = false;   // グラフは表示してから描く（非表示中は canvas の高さが 0）
+            renderGrowthAll();
+          } catch (e) { again(FAIL); }
+        })
+        .withFailureHandler(function () { again(FAIL); })
+        .feedGrowth();
+    }
+
     // ---- 睡眠タブ（T-450・DEC-079） ----
     // payload（API の sleep＝src/sleep.js の buildSleepPayload）は**タブを初めて開いたときだけ**取りに行く（初期表示を重くしない）。
     // 良否は判定しない（P-07）: 前の期間との差は中立の --sub、目安は「範囲に入っている／短め／長め」と事実だけを書く。
@@ -4142,7 +4475,8 @@
     function watchFonts() {
       if (!(document.fonts && document.fonts.addEventListener)) return;
       document.fonts.addEventListener('loadingdone', function () {
-        var sp = el('tab-sleep'), gp = el('tab-gina');
+        var sp = el('tab-sleep'), gp = el('tab-gina'), mp = el('tab-milk');
+        if (GROWTH) { if (mp && !mp.hidden) grRedraw(); else GR_THEME_STALE = true; }   // T-454: 成長の記録のグラフも作り直す
         if (SLEEP) { if (sp && !sp.hidden) slDrawCharts(); else SL_THEME_STALE = true; }
         if (chartsDrawn) {
           if (gp && !gp.hidden) { try { renderCharts(); } catch (e) { /* noop */ } }
@@ -4200,6 +4534,10 @@
         if (target === 'tab-sleep' && !sleepLoaded) {
           sleepLoaded = true;   // 初回に開いたときだけ取りに行く（失敗・記録なしのときは loadSleepTab が戻す＝次に開いたとき取り直す）
           try { loadSleepTab(); } catch (e) { /* 睡眠の失敗は他のタブを巻き添えにしない */ }
+        }
+        if (target === 'tab-milk' && !growthLoaded) {
+          growthLoaded = true;   // T-454: 初回に開いたときだけ取りに行く（失敗・記録なしのときは loadGrowthTab が戻す＝次に開いたとき取り直す）
+          try { loadGrowthTab(); } catch (e) { /* 成長の記録の失敗は他の面を巻き添えにしない */ }
         }
         if (target === 'tab-gina' && !chartsDrawn) {
           chartsDrawn = true;
