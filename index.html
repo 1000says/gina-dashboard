@@ -448,7 +448,7 @@
     footer.page .foot-note { margin: 0 auto 6px; max-width: 42em; font-size: 12.5px; line-height: 1.7; text-align: left; }
     footer.page .foot-meta { margin: 0; text-align: center; }
 
-    /* タブナビ（sticky 上部・モバイルも上部固定・5等分・横スクロール可） */
+    /* タブナビ（sticky 上部・モバイルも上部固定・6等分・横スクロール可） */
     .tabbar {
       position: sticky; top: 0; z-index: 30;
       display: flex; gap: 4px; margin: 6px 0 12px; padding: 6px;
@@ -462,8 +462,9 @@
       background: transparent; color: var(--sub); font: inherit; font-size: 11px; font-weight: 700;
       cursor: pointer; min-height: 48px; transition: background .18s, color .18s;
     }
-    /* 【T-439】5 タブへ減らして短縮形をやめた。狭い画面でも読み上げ名と同じ語を出し、「・」の直後
-       （<wbr>）でだけ 2 行に折る。keep-all で語の途中（「ミル／ク」）では折らない。 */
+    /* 【T-439】5 タブへ減らして短縮形をやめた（T-450 で 6 タブ）。狭い画面でも読み上げ名と同じ語を出し、「・」の直後
+       （<wbr>）でだけ 2 行に折る。keep-all で語の途中（「ミル／ク」）では折らない。最長の語は「ジーナ式」「ミルク・」
+       の 4 字＝11px で 44px。6 タブ（375px で各 約 59px・320px で各 約 50px）でも字間の余白を残して収まる。 */
     .tab-btn .tab-lbl { white-space: normal; word-break: keep-all; overflow-wrap: normal; line-height: 1.2; text-align: center; }
     .tab-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     /* 【G2 MUST-1 / G3 VDR】--accent on --accent-soft は **light だけ** 4.03:1 で AA 未達だった
@@ -548,10 +549,11 @@
       .wrap { padding: 12px 11px 32px; }
       .summary .score { font-size: 40px; }
       .charts { grid-template-columns: 1fr; }
-      /* 【T-439/G3 m-4】5 タブで幅に余裕ができた（375px で約 61px）＝暗所で読める 11px へ戻す */
+      /* 【T-439/G3 m-4】5 タブで幅に余裕ができた（375px で約 61px）＝暗所で読める 11px へ戻す。T-450 の 6 タブでも 375px で約 59px */
       .tab-btn { font-size: 11px; min-width: 0; padding: 7px 2px; }
       /* 【VDR T-438 M1 → T-439】7 タブ（各 45px）では「ミルク・おむつ」がはみ出して隣と連結して読めたため
-         短縮形で凌いでいた。5 タブ（375px で各 約 60px）へ減らし、短縮形は持たない（.tab-lbl の折返しで収める）。 */
+         短縮形で凌いでいた。5 タブ（375px で各 約 60px）へ減らし、短縮形は持たない（.tab-lbl の折返しで収める）。
+         T-450 の 6 タブ（375px で各 約 59px）でも同じ。 */
       /* 【uiux M-2/minor】帯の寸法は幅で変えない（84px / lower 34px / .b-name 12px を基本規則に統一）。
          幅ごとに別値を持つと、片方の幅でしか重なりを検証できない。 */
     }
@@ -632,6 +634,74 @@
     .gate.is-loading .gate-button { visibility: hidden; }   /* 読み込み中はボタンを見せない（GIS の描画は保つ・uiux m-6） */
     .gate-hint { font-size: 12px; color: var(--sub); margin: 18px 0 0; line-height: 1.7; }
     #app[hidden] { display: none; }
+    /* ==== 睡眠タブ（T-450・DEC-079）=====================================================
+       色は**既存トークンだけ**（新しい色の供給元を作らない）。面は不透明のみ。
+       文字色（color）を持つ規則は**背景の根（.plan-card / .kpi-card / .chart-card / .asof-note / .empty）の配下**に書く
+       ＝T-418 の面×テーマ検査が根へ紐づけられる形。color と background は同じ規則に書かない。
+       差・見通し・目安は**良否の色を持たない**（--sub の文字と形で読む）。 */
+    .sl-ctl { display: grid; gap: 8px; margin: 0 0 12px; }
+    .sl-ctl-row { display: flex; align-items: center; gap: 10px; }
+    .sl-ctl-row .asof-note { margin: 0; flex: 0 0 2.6em; }
+    .sl-ctl-row .seg { flex: 1; min-width: 0; }
+    /* 今日の見通し: 大きな数字 3 つ（今夜の就寝・明日の起床・今日の総睡眠） */
+    .sl-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding-top: 10px; }
+    .sl-big { min-width: 0; }
+    .sl-nw { white-space: nowrap; }
+    .plan-card .sl-lbl { font-size: 12px; font-weight: 700; color: var(--sub); }
+    .sl-num { font-size: 24px; font-weight: 800; line-height: 1.25; letter-spacing: -.02em; margin-top: 2px; }
+    .sl-u { font-size: 12px; font-weight: 700; margin: 0 1px; letter-spacing: 0; }
+    .plan-card .sl-sub { font-size: 12px; line-height: 1.5; margin-top: 2px; color: var(--sub); }
+    .plan-card .sl-wait { margin: 12px 0 6px; font-size: 14px; }
+    .plan-card .sl-now { margin: 14px 0 2px; font-size: 14px; }
+    .plan-card .sl-fine { margin: 4px 0 6px; font-size: 12px; color: var(--sub); }
+    /* 直近7日の平均（前の7日との差は中立の --sub） */
+    .kpi-card .k-delta { font-size: 11px; margin-top: 2px; color: var(--sub); }
+    .kpi-card .k-value.sl-pair { font-size: 18px; line-height: 1.4; }
+    .kpi-card.sl-wide { grid-column: span 2; }
+    /* これから 4 週の見通し: 狭い画面は 1 列・広い画面は 3 列 */
+    .sl-fc { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    @media (min-width: 720px) { .sl-fc { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    /* 同じ月齢の目安: 範囲の帯＋値の印（形で読む＝帯は面・印は細い縦線・平均は破線） */
+    .plan-card .sl-ref-band { margin: 10px 0 4px; font-size: 13px; color: var(--sub); }
+    .sl-ref-row { padding: 12px 0; }
+    .sl-ref-row + .sl-ref-row { border-top: 1px solid var(--line); }
+    .sl-ref-head { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+    .sl-ref-name { font-size: 14px; font-weight: 700; }
+    .sl-ref-val { font-size: 15px; font-weight: 800; }
+    .sl-ref-bar { margin-top: 8px; }
+    .plan-card .sl-ref-cap { font-size: 12px; color: var(--sub); }
+    .sl-track { position: relative; height: 10px; margin: 10px 0 3px; border: 1px solid var(--line); border-radius: 5px; background: var(--card-2); }
+    .sl-range { position: absolute; top: -4px; bottom: -4px; border: 1px solid var(--band-edge); border-radius: 4px; background: var(--accent-soft); }
+    .sl-pin { position: absolute; top: -7px; bottom: -7px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--accent); }
+    .sl-mean { position: absolute; top: -7px; bottom: -7px; width: 0; margin-left: -1px; border-left: 2px dashed var(--pred); }
+    .sl-scale { display: flex; justify-content: space-between; }
+    .plan-card .sl-scale { font-size: 11px; color: var(--sub); }
+    .plan-card .sl-ref-state { margin-top: 2px; font-size: 13px; }
+    .plan-card .sl-ref-src { margin-top: 1px; font-size: 11px; color: var(--sub); }
+    .plan-card .sl-ms-head { margin: 14px 0 2px; font-size: 13px; font-weight: 700; }
+    .sl-ms { margin: 4px 0 0; padding-left: 1.2em; font-size: 13px; }
+    .plan-card .sl-ms-src { font-size: 11px; color: var(--sub); }
+    .plan-card .sl-disc { margin: 14px 0 4px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px; color: var(--sub); }
+    /* 考察 */
+    .sl-ins .plan-item { align-items: flex-start; }
+    .plan-card .sl-chip { flex: 0 0 auto; margin-top: 2px; padding: 1px 8px; border: 1px solid var(--sub); border-radius: 999px;
+      font-size: 11px; font-weight: 700; color: var(--sub); }
+    .sl-ins-text { flex: 1 1 200px; min-width: 0; }
+    /* 睡眠リズム（日 × 24 時間・SVG）。塗りは SVG の fill（color は使わない） */
+    .sl-rhythm { display: block; width: 100%; max-width: 480px; height: auto; margin: 4px auto 0; }
+    .sl-rhythm .sl-rg { stroke: var(--line); stroke-width: 1; }
+    .sl-rhythm .sl-rt { fill: var(--card-2); }
+    .sl-rhythm .sl-rn { fill: var(--accent); }
+    .sl-rhythm .sl-rd { fill: var(--warn); }
+    .sl-rhythm .sl-ro { fill: var(--accent-soft); stroke: var(--pred); stroke-width: 1.5; stroke-dasharray: 3 2; }
+    .sl-rhythm text { fill: var(--sub); font-size: 12px; }
+    .chart-card .sl-legend { margin: 8px 0 0; font-size: 12px; color: var(--sub); }
+    .sl-sw { display: inline-block; width: 16px; height: 10px; margin: 0 4px 0 8px; border-radius: 2px; vertical-align: -1px; }
+    .sl-sw:first-child { margin-left: 0; }
+    .sl-sw.n { background: var(--accent); }
+    .sl-sw.d { background: var(--warn); }
+    .sl-sw.o { background: var(--accent-soft); border: 1.5px dashed var(--pred); }
+    .chart-card .sl-fc-msg { margin: 8px 0 0; font-size: 13px; color: var(--sub); }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; } }
   </style>
 </head>
@@ -659,12 +729,15 @@
     </header>
 
     <nav class="tabbar" role="tablist" aria-label="ダッシュボードのビュー切替">
-      <!-- T-439/DEC-070: 7 タブ → 5 タブ。読み上げ名（aria-label）は画面の語で始める（WCAG 2.5.3 Label in Name）。 -->
+      <!-- T-439/DEC-070: 7 タブ → 5 タブ。T-450 で睡眠を足して 6 タブ。読み上げ名（aria-label）は画面の語で始める（WCAG 2.5.3 Label in Name）。 -->
       <button class="tab-btn" type="button" role="tab" id="tab-home-tab" data-tab="tab-home" aria-controls="tab-home" aria-selected="true">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span class="tab-lbl">ホーム</span>
       </button>
       <button class="tab-btn" type="button" role="tab" id="tab-milk-tab" data-tab="tab-milk" aria-controls="tab-milk" aria-selected="false" aria-label="ミルク・おむつ">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 3H10z"/><path d="M8 6h8l1 12a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3z"/><line x1="9" y1="13" x2="15" y2="13"/></svg><span class="tab-lbl">ミルク・<wbr>おむつ</span>
+      </button>
+      <button class="tab-btn" type="button" role="tab" id="tab-sleep-tab" data-tab="tab-sleep" aria-controls="tab-sleep" aria-selected="false" aria-label="睡眠（今日の見通し・推移・同じ月齢の目安）">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span class="tab-lbl">睡眠</span>
       </button>
       <button class="tab-btn" type="button" role="tab" id="tab-gina-tab" data-tab="tab-gina" aria-controls="tab-gina" aria-selected="false" aria-label="ジーナ式（評価・理想の一日・グラフ・評価ログ）">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg><span class="tab-lbl">ジーナ式</span>
@@ -757,6 +830,84 @@
       <h2 class="sec">おむつ</h2>
       <div id="careDiaper" class="week-kpi"><!-- JS で描画 --></div>
       <p id="careNote" class="settings-note"><!-- JS で描画（確度と最終学習日時） --></p>
+    </section>
+
+    <!-- T-450/DEC-079: 睡眠タブ。**良否を判定しない**（P-07）＝今夜・明日の見通し（推定）と、これまでの事実・同じ月齢の目安との位置だけを出す。
+         payload（API の sleep）は初めてこのタブを開いたときだけ取りに行く。週齢・生年月日は payload に無い（帯のラベル文字列だけ）。 -->
+    <section id="tab-sleep" class="tab-panel" role="tabpanel" aria-labelledby="tab-sleep-tab" tabindex="0" hidden>
+      <div id="sleepState" class="empty" role="status" aria-live="polite">読み込んでいます</div>
+      <div id="sleepBody" hidden>
+        <p id="sleepAsOf" class="asof-note"><!-- JS で描画（renderSleepAsOf） --></p>
+        <h2 class="sec">今日の見通し</h2>
+        <div id="sleepToday" class="plan-card"><!-- JS で描画（renderSleepToday） --></div>
+        <h2 class="sec" id="sleepKpiHead">直近7日の平均</h2>
+        <p id="sleepKpiNote" class="asof-note"><!-- JS で描画（renderSleepKpi） --></p>
+        <div id="sleepKpi" class="week-kpi"><!-- JS で描画（renderSleepKpi） --></div>
+        <h2 class="sec">同じ月齢の目安とくらべる</h2>
+        <div id="sleepRef" class="plan-card"><!-- JS で描画（renderSleepRef） --></div>
+        <h2 class="sec">考察</h2>
+        <div id="sleepInsights" class="plan-card"><!-- JS で描画（renderSleepInsights） --></div>
+        <h2 class="sec">推移グラフ</h2>
+        <div class="sl-ctl">
+          <div class="sl-ctl-row"><span class="asof-note">期間</span>
+            <div class="seg" role="group" aria-label="表示する期間" id="sleepRangeSeg">
+              <button type="button" data-range="2w" aria-pressed="false">2週</button>
+              <button type="button" data-range="4w" aria-pressed="true">4週</button>
+              <button type="button" data-range="8w" aria-pressed="false">8週</button>
+              <button type="button" data-range="all" aria-pressed="false">全部</button>
+            </div></div>
+          <div class="sl-ctl-row"><span class="asof-note">単位</span>
+            <div class="seg" role="group" aria-label="集計の単位" id="sleepUnitSeg">
+              <button type="button" data-unit="day" aria-pressed="true">日</button>
+              <button type="button" data-unit="week" aria-pressed="false">週</button>
+              <button type="button" data-unit="month" aria-pressed="false">月</button>
+            </div></div>
+        </div>
+        <div id="sleepChartsMsg" class="empty" hidden><!-- JS で描画（グラフにできる日が無い・読み込み失敗） --></div>
+        <div id="sleepCharts" class="charts">
+          <div class="chart-card">
+            <h3>1日の総睡眠</h3>
+            <p class="hint">夜の睡眠と昼寝の積み上げ（時間）。測れない日は棒を出しません</p>
+            <div class="chart-box"><canvas id="cSlTotal" role="img" aria-label="1日の総睡眠の推移"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>夜の睡眠といちばん長い連続</h3>
+            <p class="hint">夜の睡眠の合計と、いちばん長く続けて眠った時間（どちらも時間）</p>
+            <div class="chart-box"><canvas id="cSlNight" role="img" aria-label="夜の睡眠といちばん長く続けて眠った時間の推移"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>昼寝の合計</h3>
+            <p class="hint" id="sleepNapHint">棒＝昼寝の合計</p>
+            <div class="chart-box"><canvas id="cSlNap" role="img" aria-label="昼寝の合計時間の推移"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>就寝時刻</h3>
+            <p class="hint">点線＝19:00（上ほど早い）。夜の睡眠が始まった時刻です</p>
+            <div class="chart-box"><canvas id="cSlBed" role="img" aria-label="就寝時刻の推移。点線は午後7時"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>起床時刻</h3>
+            <p class="hint">点線＝07:00（上ほど早い）。夜の睡眠が終わった時刻です</p>
+            <div class="chart-box"><canvas id="cSlWake" role="img" aria-label="起床時刻の推移。点線は午前7時"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>夜中に起きた回数</h3>
+            <p class="hint">夜の睡眠のあいだに起きた回数</p>
+            <div class="chart-box"><canvas id="cSlWakings" role="img" aria-label="夜中に起きた回数の推移"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>起きていた時間の平均</h3>
+            <p class="hint" id="sleepWinHint">睡眠と睡眠のあいだの長さの平均</p>
+            <div class="chart-box"><canvas id="cSlWakeWin" role="img" aria-label="起きていた時間の平均の推移"></canvas></div>
+          </div>
+        </div>
+        <h2 class="sec">これから4週の見通し</h2>
+        <p class="asof-note">実線＝週平均／破線＝見通し／薄い帯＝だいたいの幅（推定です）</p>
+        <div id="sleepForecast" class="sl-fc"><!-- JS で描画（renderSleepForecast） --></div>
+        <h2 class="sec">睡眠リズム</h2>
+        <div id="sleepRhythm" class="chart-card"><!-- JS で描画（renderSleepRhythm） --></div>
+        <p class="asof-note">昼寝＝6:00〜18:30 に始まった睡眠／夜＝それ以外（朝の寝直しを含む）。1日＝その日の昼寝＋その夜の睡眠。評価の点数には使っていません</p>
+      </div>
     </section>
 
     <!-- T-439/DEC-070: ジーナ式タブ＝評価の面（評価した日の帯・直近 7 日・理想の一日・推移グラフ・日次評価ログ）。
@@ -3335,10 +3486,635 @@
       return hit;
     }
 
+    // ---- 睡眠タブ（T-450・DEC-079） ----
+    // payload（API の sleep＝src/sleep.js の buildSleepPayload）は**タブを初めて開いたときだけ**取りに行く（初期表示を重くしない）。
+    // 良否は判定しない（P-07）: 前の期間との差は中立の --sub、目安は「範囲に入っている／短め／長め」と事実だけを書く。
+    // 週齢・生年月日は payload に無い（帯のラベル文字列だけ）。集計・見通し・目安の判定は**サーバが確定**したものを描くだけ（述語を複製しない）。
+    var SLEEP = null;                 // 受け取った payload（ok かつ empty でないときだけ入る）
+    var sleepLoaded = false;          // 初回表示で 1 回だけ取りに行く（失敗・記録なしは loadSleepTab が false へ戻す）
+    var sleepCharts = [];             // 推移グラフ（自前 destroy）
+    var sleepFcCharts = [];           // これから 4 週の見通し（自前 destroy）
+    var SL_RANGE = '4w', SL_UNIT = 'day';
+    var SL_RANGE_DAYS = { '2w': 14, '4w': 28, '8w': 56, all: 0 };   // 0＝全部
+    var SL_RANGE_JA = { '2w': '直近2週', '4w': '直近4週', '8w': '直近8週', all: '全期間' };
+    var SL_UNIT_JA = { day: '日ごと', week: '週ごと', month: '月ごと' };
+    var SL_PREF_KEY = { range: 'gina.sleep.range', unit: 'gina.sleep.unit' };
+    // payload に無い下限（config の sleep_tab.predict_min_nights / trend_min_days の既定値）＝文言にだけ使う
+    var SL_PREDICT_MIN_NIGHTS = 5, SL_TREND_MIN_DAYS = 10;
+    var SL_WIRED = false, SL_THEME_STALE = false;
+    var SL_KIND_JA = { primary: '論文で確認', secondary: '二次資料', gina: 'ジーナ式', app: 'このアプリの参考値' };
+    var SL_INS_KIND_JA = { trend: '傾向', pattern: 'パターン', gina: 'ジーナ式', reference: '目安' };
+
+    /** 分 → 「X時間Y分」（長さ）。0 分は「0分」・ちょうどの時間は「12時間」。測れない値は「—」。 */
+    function slDur(min) {
+      if (min == null || isNaN(min)) return '—';
+      var t = Math.round(min), neg = t < 0;
+      if (neg) t = -t;
+      var h = Math.floor(t / 60), m = t - h * 60;
+      return (neg ? '−' : '') + (h ? h + '時間' + (m ? m + '分' : '') : m + '分');
+    }
+    /** slDur の HTML 版（単位だけ小さくして大きな数字を狭いタイルに収める）。 */
+    function slDurHtml(min) {
+      if (min == null || isNaN(min)) return '—';
+      var t = Math.round(min), h = Math.floor(t / 60), m = t - h * 60;
+      return (h ? h + '<span class="sl-u">時間</span>' : '') + ((m || !h) ? m + '<span class="sl-u">分</span>' : '');
+    }
+    /** 分 → 「HH:MM」（時刻）。1440 以上・負は 24 時間で折り返す（就寝は深夜なら 1440 超で届く）。 */
+    function slClock(min) {
+      if (min == null || isNaN(min)) return '—';
+      return minToHHMM(((Math.round(min) % 1440) + 1440) % 1440);
+    }
+    /** 差の文字（符号つき）。kind='count' は回、それ以外は分（60 分以上は「X時間Y分」）。 */
+    function slSigned(d, kind) {
+      if (kind === 'count') { var r = Math.round(d * 10) / 10; return (r > 0 ? '+' : (r < 0 ? '−' : '')) + Math.abs(r) + '回'; }
+      var t = Math.round(d);
+      return (t > 0 ? '+' : (t < 0 ? '−' : '')) + slDur(Math.abs(t));
+    }
+    function slWeekday(iso) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(esc(iso));
+      return m ? BAND_WD[new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay()] : '';
+    }
+    function slMD(iso) { return shortDate(iso) + '(' + slWeekday(iso) + ')'; }   // 10/2(木)
+
+    function renderSleepAsOf() {
+      var n = el('sleepAsOf');
+      if (n && SLEEP) n.textContent = (SLEEP.asOf || '') + ' 時点';
+    }
+
+    // -- 今日の見通し --
+    function slBig(label, numHtml, subHtml) {
+      return '<div class="sl-big"><div class="sl-lbl">' + escHtml(label) + '</div>'
+        + '<div class="sl-num u-tnum">' + numHtml + '</div>' + (subHtml || '') + '</div>';
+    }
+    /** 「だいたい lo〜hi」と「これまでの平均の誤差 ±mae分」（null は出さない）。 */
+    function slSpread(o, fmt) {
+      if (!o) return '';
+      var h = '';
+      if (o.lo != null && o.hi != null) h += '<div class="sl-sub">だいたい <span class="sl-nw">' + escHtml(fmt(o.lo)) + '</span>〜<span class="sl-nw">' + escHtml(fmt(o.hi)) + '</span></div>';
+      if (o.mae != null) h += '<div class="sl-sub">これまでの平均の誤差 ±' + escHtml(Math.round(o.mae)) + '分</div>';
+      return h;
+    }
+    function renderSleepToday() {
+      var box = el('sleepToday');
+      if (!box || !SLEEP) return;
+      var p = SLEEP.predict || {}, t = SLEEP.today || {}, h = [];
+      if (p.available === false) {
+        h.push('<p class="sl-wait">見通しは、夜の記録が ' + SL_PREDICT_MIN_NIGHTS + ' 日分そろうと出ます（いま '
+          + escHtml(p.nights == null ? 0 : p.nights) + ' 日）。</p>');
+      } else {
+        var bed = p.bedtime, wake = p.wake, tot = p.todayTotal;
+        var bedNum = !bed ? '—' : (bed.status === 'actual'
+          ? escHtml(slClock(bed.min)) + '<span class="sl-u">に寝ました</span>' : escHtml(slClock(bed.min)));
+        h.push('<div class="sl-three">');
+        h.push(slBig('今夜の就寝', bedNum, bed && bed.status !== 'actual' ? slSpread(bed, slClock) : ''));
+        h.push(slBig('明日の起床', wake ? escHtml(slClock(wake.min)) : '—',
+          wake ? slSpread(wake, slClock) + (wake.basis === 'bedtime' ? '<div class="sl-sub">今夜の就寝をふまえた見通し</div>' : '') : ''));
+        h.push(slBig('今日の総睡眠', tot ? slDurHtml(tot.min) : '—', tot ? slSpread(tot, slDur) : ''));
+        h.push('</div>');
+      }
+      var now = t.sleeping
+        ? (t.sleepingKind === 'night' ? '夜の睡眠中' : '昼寝中（' + slClock(t.sleepingSince) + '〜）') : '起きています';
+      h.push('<p class="sl-now"><b>いま:</b> ' + escHtml(now) + '</p>');
+      var nap = '今日ここまでの昼寝 ' + slDur(t.napSoFar) + '（' + (t.napCount == null ? 0 : t.napCount) + '回）';
+      if (p.available !== false && p.todayTotal && p.todayTotal.napRemaining != null) nap += '・この先の昼寝の見通し ' + slDur(p.todayTotal.napRemaining);
+      h.push('<p class="sl-now">' + escHtml(nap) + '</p>');
+      h.push('<p class="sl-fine">見通しは推定です。</p>');
+      box.innerHTML = h.join('');
+    }
+
+    // -- 直近7日の平均 --
+    function slDeltaHtml(cur, prev, kind, N) {
+      var pre = '前の' + N + '日';
+      if (cur == null || prev == null) return '<div class="k-delta">' + pre + 'との差 —</div>';
+      var d = cur - prev;
+      if (kind === 'count' ? Math.abs(d) < 0.05 : Math.round(d) === 0) return '<div class="k-delta">' + pre + 'と同じ</div>';
+      return '<div class="k-delta"><span aria-hidden="true">' + (d > 0 ? '↑' : '↓') + '</span> ' + pre + 'より ' + escHtml(slSigned(d, kind)) + '</div>';
+    }
+    function renderSleepKpi() {
+      var box = el('sleepKpi');
+      if (!box || !SLEEP) return;
+      var sm = SLEEP.summary || {}, R = sm.recent || {}, P = sm.prev || {}, N = SLEEP.recentDays || 7;
+      var note = el('sleepKpiNote');
+      if (note) note.textContent = R.from ? shortDate(R.from) + '〜' + shortDate(R.to) + '・測れた日 ' + (R.n == null ? 0 : R.n) + ' 日分の平均' : '';
+      var bw = (R.bedtime != null || R.wakeTime != null);
+      var bedWake = '<div class="k-value sl-pair u-tnum">就寝 ' + escHtml(slClock(R.bedtime)) + '<br>起床 ' + escHtml(slClock(R.wakeTime)) + '</div>';
+      var bwDelta = (R.bedtime != null && P.bedtime != null || R.wakeTime != null && P.wakeTime != null)
+        ? '<div class="k-delta">前の' + N + '日より 就寝 ' + (R.bedtime != null && P.bedtime != null ? escHtml(slSigned(R.bedtime - P.bedtime, 'min')) : '—')
+          + '・起床 ' + (R.wakeTime != null && P.wakeTime != null ? escHtml(slSigned(R.wakeTime - P.wakeTime, 'min')) : '—') + '</div>'
+        : '<div class="k-delta">前の' + N + '日との差 —</div>';
+      var tiles = [
+        { label: '1日の総睡眠', value: slDurHtml(R.totalMin), delta: slDeltaHtml(R.totalMin, P.totalMin, 'min', N) },
+        { label: '夜の睡眠', value: slDurHtml(R.nightMin), delta: slDeltaHtml(R.nightMin, P.nightMin, 'min', N) },
+        { label: '昼寝', value: slDurHtml(R.napMin), sub: R.napCount != null ? '1日あたり ' + R.napCount + '回' : '', delta: slDeltaHtml(R.napMin, P.napMin, 'min', N) },
+        { label: 'いちばん長い連続', value: slDurHtml(R.longestMin), delta: slDeltaHtml(R.longestMin, P.longestMin, 'min', N) },
+        { label: '夜中に起きた回数', value: R.wakings == null ? '—' : escHtml(R.wakings) + '<span class="sl-u">回</span>', delta: slDeltaHtml(R.wakings, P.wakings, 'count', N) },
+        { label: '起きていた時間（平均）', value: slDurHtml(R.wakeWindowMin), delta: slDeltaHtml(R.wakeWindowMin, P.wakeWindowMin, 'min', N) },
+        // 最後の 1 枚（2 列幅）にして、7 枚でも余りが出ない並びにする
+        { label: '就寝／起床（平均時刻）', raw: bedWake, wide: true, delta: bw ? bwDelta : '<div class="k-delta">前の' + N + '日との差 —</div>' }
+      ];
+      box.innerHTML = tiles.map(function (c) {
+        return '<div class="kpi-card' + (c.wide ? ' sl-wide' : '') + '"><div class="k-label">' + escHtml(c.label) + '</div>'
+          + (c.raw ? c.raw : '<div class="k-value u-tnum">' + c.value + '</div>')
+          + (c.sub ? '<div class="k-sub">' + escHtml(c.sub) + '</div>' : '') + c.delta + '</div>';
+      }).join('');
+    }
+
+    // -- 同じ月齢の目安 --
+    function slFmtVal(v, unit) { return v == null ? '—' : (unit === 'count' ? (Math.round(v * 10) / 10) + '回' : slDur(v)); }
+    function slRangeText(r, unit) {
+      if (r.low != null && r.high != null) return slFmtVal(r.low, unit) + '〜' + slFmtVal(r.high, unit);
+      if (r.high != null) return slFmtVal(r.high, unit) + ' まで';
+      if (r.low != null) return slFmtVal(r.low, unit) + ' から';
+      if (r.mean != null) return '平均 約' + slFmtVal(r.mean, unit);
+      return '';
+    }
+    /** 出典の文字（種別と出典名。出典名が種別の語で始まるときは重ねない）。 */
+    function slSrcText(r) {
+      var k = SL_KIND_JA[r.kind] || '', src = r.source || '';
+      if (!k) return src;
+      return (src && src.indexOf(k) === 0) ? src : (src ? k + '・' + src : k);
+    }
+    function slRefSentence(it, i) {
+      var st = (it.statuses && it.statuses[i]) || it.status, r = it.ranges[i];
+      if (it.value == null || st === 'nodata') return '直近の記録がまだありません';
+      if (st === 'within') return '目安の範囲に入っています';
+      if (st === 'below') return '目安より短めです';
+      if (st === 'above') return '目安より長めです';
+      if (st === 'mean_only' && r.mean != null) {
+        var d = it.value - r.mean, more = it.unit === 'count' ? '多め' : '長め', less = it.unit === 'count' ? '少なめ' : '短め';
+        var head = '平均（約' + slFmtVal(r.mean, it.unit) + '）';
+        if (it.unit === 'count' ? Math.abs(d) < 0.05 : Math.round(d) === 0) return head + 'とほぼ同じです';
+        return head + 'より ' + slFmtVal(Math.abs(d), it.unit) + (d > 0 ? more : less) + 'です';
+      }
+      return '';
+    }
+    function slRefBar(it, r, i, maxV) {
+      var pos = function (v) { return Math.max(0, Math.min(100, v / maxV * 100)); };
+      var h = '<div class="sl-track" aria-hidden="true">';
+      if (r.low != null || r.high != null) {
+        var lo = r.low != null ? r.low : 0, hi = r.high != null ? r.high : maxV;
+        h += '<span class="sl-range" style="left:' + pos(lo).toFixed(1) + '%;width:' + Math.max(1, pos(hi) - pos(lo)).toFixed(1) + '%"></span>';
+      } else if (r.mean != null) {
+        h += '<span class="sl-mean" style="left:' + pos(r.mean).toFixed(1) + '%"></span>';
+      }
+      if (it.value != null) h += '<span class="sl-pin" style="left:' + pos(it.value).toFixed(1) + '%"></span>';
+      h += '</div><div class="sl-scale" aria-hidden="true"><span>0</span><span>' + escHtml(slFmtVal(maxV, it.unit)) + '</span></div>';
+      return h;
+    }
+    function renderSleepRef() {
+      var box = el('sleepRef');
+      if (!box || !SLEEP) return;
+      var ref = SLEEP.reference || {}, h = [];
+      if (ref.available === false) {
+        h.push('<p class="sl-wait">同じ月齢の目安は、設定が済むと表示されます。</p>');
+      } else {
+        h.push('<p class="sl-ref-band">' + escHtml(SLEEP.bandLabel || ref.bandLabel || '') + '（研究の分布）・ジーナ式 '
+          + escHtml(SLEEP.ginaBandLabel || ref.ginaBandLabel || '') + '</p>');
+        (ref.items || []).forEach(function (it) {
+          var rs = it.ranges || [];
+          if (!rs.length) return;
+          var raw = [it.value];
+          rs.forEach(function (r) { [r.low, r.high, r.mean].forEach(function (x) { if (x != null) raw.push(x); }); });
+          var top = Math.max.apply(null, raw.filter(function (x) { return x != null; }).concat([0])) * 1.08;
+          var maxV = it.unit === 'count' ? Math.max(1, Math.ceil(top)) : Math.max(60, Math.ceil(top / 60) * 60);
+          h.push('<div class="sl-ref-row"><div class="sl-ref-head"><span class="sl-ref-name">' + escHtml(it.label) + '</span>'
+            + '<span class="sl-ref-val u-tnum">わが子（直近の平均） ' + escHtml(slFmtVal(it.value, it.unit)) + '</span></div>');
+          rs.forEach(function (r, i) {
+            h.push('<div class="sl-ref-bar"><div class="sl-ref-cap">' + escHtml(r.label || '') + '　' + escHtml(slRangeText(r, it.unit)) + '</div>'
+              + slRefBar(it, r, i, maxV)
+              + '<div class="sl-ref-state">' + escHtml(slRefSentence(it, i)) + '</div>'
+              + '<div class="sl-ref-src">' + escHtml(slSrcText(r)) + '</div></div>');
+          });
+          h.push('</div>');
+        });
+        var ms = ref.milestones || [];
+        if (ms.length) {
+          h.push('<p class="sl-ms-head">この月齢の節目（目安）</p><ul class="sl-ms">' + ms.map(function (m) {
+            return '<li>' + escHtml(m.text) + ' <span class="sl-ms-src">（' + escHtml(slSrcText(m)) + '）</span></li>';
+          }).join('') + '</ul>');
+        }
+      }
+      var disc = SLEEP.disclaimer || ref.disclaimer || '';
+      if (disc) h.push('<p class="sl-disc">' + escHtml(disc) + '</p>');
+      box.innerHTML = h.join('');
+    }
+
+    // -- 考察 --
+    function renderSleepInsights() {
+      var box = el('sleepInsights');
+      if (!box || !SLEEP) return;
+      var all = SLEEP.insights || [];
+      var ins = all.filter(function (x) { return x.kind !== 'note'; });
+      var notes = all.filter(function (x) { return x.kind === 'note'; });   // 相関の注記など＝チップを付けずリストの下に小さく
+      if (!ins.length) { box.innerHTML = '<p class="sl-wait">記録がもう少し集まると考察を表示します</p>'; return; }
+      box.innerHTML = '<ul class="plan-list sl-ins">' + ins.map(function (x) {
+        return '<li class="plan-item"><span class="sl-chip">' + escHtml(SL_INS_KIND_JA[x.kind] || '') + '</span>'
+          + '<span class="sl-ins-text">' + escHtml(x.text) + '</span></li>';
+      }).join('') + '</ul>' + notes.map(function (x) { return '<p class="sl-fine">' + escHtml(x.text) + '</p>'; }).join('');
+    }
+
+    // -- 推移グラフ（期間と単位） --
+    function slPrefGet(k, allowed, dflt) {
+      try { var v = window.sessionStorage.getItem(SL_PREF_KEY[k]); return allowed.indexOf(v) >= 0 ? v : dflt; } catch (e) { return dflt; }
+    }
+    function slPrefSet(k, v) { try { window.sessionStorage.setItem(SL_PREF_KEY[k], v); } catch (e) { /* 保存できなくても表示は続ける */ } }
+    function renderSleepControls() {
+      ['sleepRangeSeg', 'sleepUnitSeg'].forEach(function (id) {
+        var seg = el(id);
+        if (!seg) return;
+        var bs = seg.querySelectorAll('button');
+        for (var i = 0; i < bs.length; i++) {
+          var v = bs[i].getAttribute('data-range') || bs[i].getAttribute('data-unit');
+          bs[i].setAttribute('aria-pressed', v === (id === 'sleepRangeSeg' ? SL_RANGE : SL_UNIT) ? 'true' : 'false');
+        }
+      });
+    }
+    /** 選んだ期間・単位の点（日は daily を末尾から切る／週・月は期間に重なる区間だけ）。m＝その点の指標（null は測れない）。 */
+    function slPoints() {
+      var S = SLEEP || {}, daily = S.daily || [], days = SL_RANGE_DAYS[SL_RANGE];
+      var cut = days ? daily.slice(-days) : daily;
+      if (SL_UNIT === 'day') {
+        return cut.map(function (r) { return { label: shortDate(r.date), title: slMD(r.date), m: r }; });
+      }
+      var from = cut.length ? cut[0].date : null;
+      var list = (SL_UNIT === 'week' ? S.week : S.month) || [];
+      return list.filter(function (g) { return from != null && g.end >= from; }).map(function (g) {
+        var title;
+        if (SL_UNIT === 'week') { title = shortDate(g.start) + '〜' + shortDate(g.end) + ' の平均（' + g.days + ' 日）'; }
+        else { var mm = /^(\d{4})-(\d{2})/.exec(g.key || ''); title = (mm ? mm[1] + '年' + (+mm[2]) + '月' : g.key) + ' の平均（' + g.days + ' 日）'; }
+        var lab;
+        if (SL_UNIT === 'week') lab = shortDate(g.start) + '〜';
+        else { var m2 = /^(\d{4})-(\d{2})/.exec(g.key || ''); lab = m2 ? m2[1] + '/' + (+m2[2]) : String(g.key); }
+        return { label: lab, title: title, m: g };
+      });
+    }
+    function slSeries(pts, key) {
+      return pts.map(function (p) { var v = p.m[key]; return (v == null || isNaN(v)) ? null : v; });
+    }
+    function slAny(a) { return a.some(function (v) { return v != null; }); }
+    function slDestroy(list) { try { list.forEach(function (c) { c.destroy(); }); } catch (e) { /* noop */ } }
+    function slSetAria(id, name, vals, fmt, pts) {
+      var c = el(id);
+      if (!c) return;
+      var got = [];
+      vals.forEach(function (v, i) { if (v != null) got.push({ v: v, i: i }); });
+      var base = name + 'の推移（' + SL_UNIT_JA[SL_UNIT] + '・' + SL_RANGE_JA[SL_RANGE] + '）';
+      if (!got.length) { c.setAttribute('aria-label', base + '。値のある区間はありません'); return; }
+      var last = got[got.length - 1], vs = got.map(function (g) { return g.v; });
+      c.setAttribute('aria-label', base + '。最新 ' + pts[last.i].title + ' ' + fmt(last.v) + '、最小 ' + fmt(Math.min.apply(null, vs)) + '、最大 ' + fmt(Math.max.apply(null, vs)));
+    }
+    /** y 軸を「X時間Y分」の目盛りにする（step が分かるときは区切りを固定）。 */
+    function slDurAxis(o, step) {
+      o.scales.y.ticks.callback = function (v) { return slDur(v); };
+      if (step) { o.scales.y.ticks.stepSize = step; o.scales.y.ticks.maxTicksLimit = 8; }
+    }
+    /** 時刻の軸（上ほど早い）。目安の線も入れた範囲に収める。 */
+    function slClockAxis(o, vals, ref) {
+      var got = vals.filter(function (v) { return v != null; }).concat([ref]);
+      var lo = Math.floor((Math.min.apply(null, got) - 10) / 30) * 30, hi = Math.ceil((Math.max.apply(null, got) + 10) / 30) * 30;
+      o.scales.y.min = lo; o.scales.y.max = hi; o.scales.y.reverse = true;
+      o.scales.y.ticks.stepSize = (hi - lo) <= 240 ? 30 : ((hi - lo) <= 480 ? 60 : 120);   // 18:30・19:00 のように区切りをそろえる
+      o.scales.y.ticks.maxTicksLimit = 10;
+      o.scales.y.ticks.callback = function (v) { return slClock(v); };
+    }
+    /** 目安・基準の線は**すべて --sub の点線**（色で良否や出所を言わない）。呼び出し側の色は使わない。 */
+    function slRefDash(data, color, label) {
+      return Object.assign(lineDataset(data, cssVar('--sub')), { label: label, borderDash: [2, 4], pointRadius: 0, borderWidth: 2, fill: false });
+    }
+    function slLine(data, color, label) { return Object.assign(lineDataset(data, color), { label: label, spanGaps: false }); }
+    /** reference の項目から、出所（kind）が kinds のいずれかの範囲を 1 つ取る（値は payload から。画面で決めない）。 */
+    function slGinaRange(key, kinds) {
+      var out = null, ref = (SLEEP && SLEEP.reference) || {};
+      (ref.items || []).forEach(function (it) {
+        if (it.key !== key) return;
+        (it.ranges || []).forEach(function (r) { if ((kinds || ['gina']).indexOf(r.kind) >= 0) out = r; });
+      });
+      return out;
+    }
+    function slTitleCb(pts) { return function (items) { return items.length && pts[items[0].dataIndex] ? pts[items[0].dataIndex].title : ''; }; }
+
+    function renderSleepCharts() {
+      slDestroy(sleepCharts); sleepCharts = [];
+      var box = el('sleepCharts'), msg = el('sleepChartsMsg');
+      if (!box || !SLEEP) return;
+      var pts = slPoints();
+      var note = '';
+      if (!window.Chart) note = 'グラフの読み込みに失敗しました。通信環境を確認して再読み込みしてください。';
+      else if (!pts.length || !slAny(slSeries(pts, 'totalMin').concat(slSeries(pts, 'nightMin'), slSeries(pts, 'napMin')))) note = 'この期間にグラフにできる日がまだありません。';
+      if (note) { if (msg) { msg.textContent = note; msg.hidden = false; } box.hidden = true; return; }
+      if (msg) msg.hidden = true;
+      box.hidden = false;
+      applyChartDefaults();
+      var accent = cssVar('--accent'), warn = cssVar('--warn'), card = cssVar('--card');
+      var labels = pts.map(function (p) { return p.label; });
+      var tCb = slTitleCb(pts);
+      var tip = function (o, cbs) { o.plugins.tooltip.callbacks = Object.assign({ title: tCb }, cbs); };
+      var legend = function (o) { o.plugins.legend = { display: true, position: 'bottom', labels: { boxWidth: 12, padding: 12 } }; };
+      var seam = { borderColor: card, borderWidth: { top: 1, bottom: 1, left: 0, right: 0 }, borderSkipped: false };
+
+      // 1. 1日の総睡眠（積み上げ棒・夜＝accent／昼寝＝warn）。総睡眠が測れた区間だけ棒を出す
+      var tot = slSeries(pts, 'totalMin');
+      var nightV = slSeries(pts, 'nightMin').map(function (v, i) { return tot[i] == null ? null : v; });
+      var napV = slSeries(pts, 'napMin').map(function (v, i) { return tot[i] == null ? null : v; });
+      slSetAria('cSlTotal', '1日の総睡眠', tot, slDur, pts);
+      sleepCharts.push(new Chart(el('cSlTotal'), {
+        type: 'bar',
+        data: { labels: labels, datasets: [
+          Object.assign(barDataset(nightV, accent), { label: '夜の睡眠', stack: 's' }, seam),
+          Object.assign(barDataset(napV, warn), { label: '昼寝', stack: 's' }, seam)
+        ] },
+        options: baseOpts(function (o) {
+          legend(o);
+          o.scales.x.stacked = true; o.scales.y.stacked = true; o.scales.y.min = 0;
+          slDurAxis(o, 120);
+          tip(o, {
+            label: function (c) { return c.dataset.label + ' ' + slDur(c.parsed.y); },
+            footer: function (items) { var s = 0; items.forEach(function (c) { s += c.parsed.y || 0; }); return items.length ? '合計 ' + slDur(s) : ''; }
+          });
+        })
+      }));
+
+      // 2. 夜の睡眠といちばん長い連続（折れ線 2 本・同じ単位）
+      var nightS = slSeries(pts, 'nightMin'), longS = slSeries(pts, 'longestMin');
+      slSetAria('cSlNight', '夜の睡眠といちばん長く続けて眠った時間', nightS, slDur, pts);
+      sleepCharts.push(new Chart(el('cSlNight'), {
+        type: 'line',
+        data: { labels: labels, datasets: [
+          slLine(nightS, accent, '夜の睡眠'),
+          Object.assign(slLine(longS, warn, 'いちばん長い連続'), { pointStyle: 'rectRot', pointRadius: 3 })
+        ] },
+        options: baseOpts(function (o) {
+          legend(o); slDurAxis(o, 60);
+          tip(o, { label: function (c) { return c.dataset.label + ' ' + slDur(c.parsed.y); } });
+        })
+      }));
+
+      // 3. 昼寝の合計（棒）＋ジーナ式の上限の点線（無ければ線なし）。棒と折れ線を混ぜず、基準の点線だけ重ねる
+      var napS = slSeries(pts, 'napMin'), gNap = slGinaRange('napMin');
+      var capLine = (gNap && gNap.high != null) ? napS.map(function () { return gNap.high; }) : null;
+      // Chart.js は order の小さいものを手前に描く＝棒（2）→ ケーシング（1）→ 点線（0）で、点線が棒の上に見える
+      var napSets = [Object.assign(barDataset(napS, warn), { label: '昼寝の合計', order: 2 })];
+      if (capLine) { napSets.push(Object.assign(casingDataset(capLine), { order: 1 })); napSets.push(Object.assign(slRefDash(capLine, cssVar('--sub'), 'ジーナ式の上限'), { order: 0 })); }
+      var nh = el('sleepNapHint');
+      if (nh) nh.textContent = capLine ? '棒＝昼寝の合計／点線＝ジーナ式の上限（' + slDur(gNap.high) + '・月齢帯の参考値）' : '棒＝昼寝の合計';
+      slSetAria('cSlNap', '昼寝の合計', napS, slDur, pts);
+      sleepCharts.push(new Chart(el('cSlNap'), {
+        type: 'line',   // 棒＋点線の混在は base type を line にし bar dataset 側で override する（cNap と同じ作法）
+        data: { labels: labels, datasets: napSets },
+        options: baseOpts(function (o) {
+          o.scales.y.min = 0; slDurAxis(o, 60);
+          if (capLine) hideCasing(o, 1);
+          tip(o, { label: function (c) { return c.datasetIndex === 2 ? 'ジーナ式の上限 ' + slDur(c.parsed.y) : '昼寝の合計 ' + slDur(c.parsed.y); } });
+        })
+      }));
+
+      // 4. 就寝時刻（折れ線・点線＝19:00・上ほど早い）／5. 起床時刻（点線＝07:00）— 既存の cBed／cWake と同じ作法
+      var bedS = slSeries(pts, 'bedtime'), wakeS = slSeries(pts, 'wakeTime');
+      slSetAria('cSlBed', '就寝時刻', bedS, slClock, pts);
+      sleepCharts.push(new Chart(el('cSlBed'), {
+        type: 'line',
+        data: { labels: labels, datasets: [slLine(bedS, accent, '就寝'), slRefDash(bedS.map(function () { return 1140; }), warn, '目安 19:00')] },
+        options: baseOpts(function (o) {
+          slClockAxis(o, bedS, 1140);
+          tip(o, { label: function (c) { return c.datasetIndex === 1 ? '目安 19:00' : '就寝 ' + slClock(c.parsed.y); } });
+        })
+      }));
+      slSetAria('cSlWake', '起床時刻', wakeS, slClock, pts);
+      sleepCharts.push(new Chart(el('cSlWake'), {
+        type: 'line',
+        data: { labels: labels, datasets: [slLine(wakeS, accent, '起床'), slRefDash(wakeS.map(function () { return 420; }), warn, '目安 07:00')] },
+        options: baseOpts(function (o) {
+          slClockAxis(o, wakeS, 420);
+          tip(o, { label: function (c) { return c.datasetIndex === 1 ? '目安 07:00' : '起床 ' + slClock(c.parsed.y); } });
+        })
+      }));
+
+      // 6. 夜中に起きた回数（棒）
+      var wk = slSeries(pts, 'wakings');
+      slSetAria('cSlWakings', '夜中に起きた回数', wk, function (v) { return (Math.round(v * 10) / 10) + '回'; }, pts);
+      sleepCharts.push(new Chart(el('cSlWakings'), {
+        type: 'bar',
+        data: { labels: labels, datasets: [Object.assign(barDataset(wk, accent), { label: '夜中に起きた回数' })] },
+        options: baseOpts(function (o) {
+          o.scales.y.min = 0; o.scales.y.ticks.stepSize = 1; o.scales.y.ticks.precision = 0;
+          o.scales.y.title = { display: true, text: '回' };
+          tip(o, { label: function (c) { return '夜中に起きた ' + (Math.round(c.parsed.y * 10) / 10) + '回'; } });
+        })
+      }));
+
+      // 7. 起きていた時間の平均（折れ線）＋目安（アプリの参考値）の下限・上限（点線 2 本）
+      var ww = slSeries(pts, 'wakeWindowMin'), gWin = slGinaRange('wakeWindowMin', ['app', 'gina']);
+      var winName = (gWin && gWin.kind === 'gina') ? 'ジーナ式の目安' : 'アプリの参考値';
+      var winSets = [slLine(ww, accent, '起きていた時間の平均')];
+      var hasWin = gWin && gWin.low != null && gWin.high != null;
+      if (hasWin) {
+        winSets.push(slRefDash(ww.map(function () { return gWin.low; }), warn, winName + '（下）'));
+        winSets.push(slRefDash(ww.map(function () { return gWin.high; }), warn, winName + '（上）'));
+      }
+      var wh = el('sleepWinHint');
+      if (wh) wh.textContent = hasWin ? '睡眠と睡眠のあいだの長さの平均／点線＝' + winName + '（' + slDur(gWin.low) + '〜' + slDur(gWin.high) + '）' : '睡眠と睡眠のあいだの長さの平均';
+      slSetAria('cSlWakeWin', '起きていた時間の平均', ww, slDur, pts);
+      sleepCharts.push(new Chart(el('cSlWakeWin'), {
+        type: 'line',
+        data: { labels: labels, datasets: winSets },
+        options: baseOpts(function (o) {
+          slDurAxis(o, 30);
+          tip(o, { label: function (c) { return c.dataset.label + ' ' + slDur(c.parsed.y); } });
+        })
+      }));
+      SL_THEME_STALE = false;
+    }
+
+    // -- これから4週の見通し（直近 8 週の週平均＋見通し 4 点＋幅） --
+    var SL_FC_CARDS = [
+      { key: 'totalMin', name: '1日の総睡眠', id: 'cSlF1' },
+      { key: 'nightMin', name: '夜の睡眠', id: 'cSlF2' },
+      { key: 'longestMin', name: 'いちばん長く続けて眠った時間', id: 'cSlF3' }
+    ];
+    function slSignedMin(v) { var t = Math.round(v); return (t > 0 ? '+' : (t < 0 ? '−' : '')) + Math.abs(t) + '分'; }
+    function renderSleepForecast() {
+      slDestroy(sleepFcCharts); sleepFcCharts = [];
+      var box = el('sleepForecast');
+      if (!box || !SLEEP) return;
+      var fc = SLEEP.forecast || {};
+      box.innerHTML = SL_FC_CARDS.map(function (c) {
+        var f = fc[c.key], body;
+        if (!f) {
+          body = '<p class="sl-fc-msg">見通しには ' + SL_TREND_MIN_DAYS + ' 日以上の記録が必要です</p>';
+        } else {
+          body = '<p class="hint">推定です。直近' + escHtml(SLEEP.trendDays || 28) + '日の伸び（週あたり ' + escHtml(slSignedMin(f.perWeek))
+            + (f.capped ? '・上限 ' + escHtml(Math.abs(Math.round(f.perWeek))) + '分で止めています' : '')
+            + '）を延ばしたものです。体調や成長の節目で変わります。</p>'
+            + '<div class="chart-box"><canvas id="' + c.id + '" role="img" aria-label="' + escHtml(c.name + 'の、直近8週の週平均と、これから4週の見通し（推定）') + '"></canvas></div>';
+        }
+        return '<div class="chart-card"><h3>' + escHtml(c.name) + '</h3>' + body + '</div>';
+      }).join('');
+      if (!window.Chart) return;
+      applyChartDefaults();
+      var accent = cssVar('--accent'), pred = cssVar('--pred'), soft = cssVar('--accent-soft'), card = cssVar('--card');
+      SL_FC_CARDS.forEach(function (c) {
+        var f = fc[c.key];
+        if (!f || !el(c.id)) return;
+        var weeks = (SLEEP.week || []).slice(-8), nA = weeks.length;
+        var labels = weeks.map(function (w) { return shortDate(w.start); }).concat(f.points.map(function (q) { return shortDate(q.start); }));   // 週のはじまり（月曜）の日付
+        var n = labels.length, nul = function () { var a = []; for (var i = 0; i < n; i++) a.push(null); return a; };
+        var actual = nul(), mid = nul(), lo = nul(), hi = nul();
+        weeks.forEach(function (w, i) { actual[i] = (w[c.key] == null) ? null : w[c.key]; });
+        var lastI = -1;
+        actual.forEach(function (v, i) { if (v != null) lastI = i; });
+        if (lastI >= 0) { mid[lastI] = lo[lastI] = hi[lastI] = actual[lastI]; }   // 実績の最後の点から見通しをつなぐ
+        f.points.forEach(function (q, i) { mid[nA + i] = q.value; lo[nA + i] = q.lo; hi[nA + i] = q.hi; });
+        sleepFcCharts.push(new Chart(el(c.id), {
+          type: 'line',
+          data: { labels: labels, datasets: [
+            { label: 'だいたいの幅（下）', data: lo, borderColor: pred, borderWidth: 1, pointRadius: 0, fill: false, spanGaps: false, order: 3 },
+            { label: 'だいたいの幅（上）', data: hi, borderColor: pred, borderWidth: 1, pointRadius: 0, backgroundColor: soft, fill: '-1', spanGaps: false, order: 2 },   // 幅（面）は線の奥へ（order が大きいほど奥）
+            Object.assign(lineDataset(mid, pred), { label: '見通し（推定）', order: 1, borderDash: [5, 4], spanGaps: false, pointRadius: 3, pointBackgroundColor: card, pointBorderColor: pred, tension: 0 }),
+            Object.assign(lineDataset(actual, accent), { label: '週平均', order: 0, spanGaps: false, tension: 0 })
+          ] },
+          options: baseOpts(function (o) {
+            slDurAxis(o, 30);
+            o.scales.x.ticks.maxRotation = 0; o.scales.x.ticks.minRotation = 0;
+            o.plugins.tooltip.filter = function (it) { return it.datasetIndex >= 2 && !(it.datasetIndex === 2 && it.dataIndex < nA); };
+            o.plugins.tooltip.callbacks = {
+              label: function (it) {
+                if (it.datasetIndex === 3) return '週平均 ' + slDur(it.parsed.y);
+                var q = f.points[it.dataIndex - nA];
+                return '見通し（推定） ' + slDur(it.parsed.y) + (q ? '（だいたい ' + slDur(q.lo) + '〜' + slDur(q.hi) + '）' : '');
+              }
+            };
+          })
+        }));
+      });
+    }
+
+    // -- 睡眠リズム（日 × 24 時間・インライン SVG） --
+    function renderSleepRhythm() {
+      var box = el('sleepRhythm');
+      if (!box || !SLEEP) return;
+      var rows = (SLEEP.rhythm || []).slice(-(SL_RANGE === '2w' ? 14 : 28)).slice().reverse();   // 新しい日が上
+      if (!rows.length) { box.innerHTML = '<p class="sl-fc-msg">表示できる日がまだありません。</p>'; return; }
+      var W = 320, L = 66, R = 14, PW = W - L - R, RH = 13, GAP = 4, TOP = 22, H = TOP + rows.length * (RH + GAP) + 2;   // 幅 320＝375px で実寸 12px 前後
+      var x = function (m) { return (L + m / 1440 * PW).toFixed(1); };
+      var s = '<svg class="sl-rhythm" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="'
+        + escHtml('睡眠リズム。直近' + rows.length + '日の、夜の睡眠・昼寝・寝ている途中の時間帯を、横 0〜24 時で日ごとに並べた図（新しい日が上）') + '">';
+      // 重なり順: 行の地（トラック）→ 目盛りの縦線 → 睡眠の帯（線が帯の上に出ない）
+      rows.forEach(function (r, i) {
+        var y = TOP + i * (RH + GAP);
+        s += '<text x="' + (L - 6) + '" y="' + (y + RH - 2) + '" text-anchor="end">' + escHtml(slMD(r.date)) + '</text>'
+          + '<rect class="sl-rt" x="' + L + '" y="' + y + '" width="' + PW + '" height="' + RH + '" rx="2"/>';
+      });
+      [0, 6, 12, 18, 24].forEach(function (hr) {
+        var xx = x(hr * 60);
+        s += '<line class="sl-rg" x1="' + xx + '" y1="' + (TOP - 6) + '" x2="' + xx + '" y2="' + (H - 2) + '"/>'
+          + '<text x="' + xx + '" y="12" text-anchor="middle">' + hr + '時</text>';
+      });
+      rows.forEach(function (r, i) {
+        var y = TOP + i * (RH + GAP);
+        (r.segs || []).forEach(function (g) {
+          var w = Math.max(1.5, (g[1] - g[0]) / 1440 * PW);
+          s += '<rect class="sl-r' + (g[2] === 'n' ? 'n' : (g[2] === 'o' ? 'o' : 'd')) + '" x="' + x(g[0]) + '" y="' + y + '" width="' + w.toFixed(1) + '" height="' + RH + '" rx="2"/>';
+        });
+      });
+      s += '</svg>';
+      box.innerHTML = '<h3>直近' + rows.length + '日（新しい日が上）</h3>' + s + '<p class="sl-legend"><span class="sl-sw n"></span>夜<span class="sl-sw d"></span>昼寝<span class="sl-sw o"></span>寝ている途中</p>';
+    }
+
+    function slRedraw() {
+      try { renderSleepCharts(); } catch (e) { /* 1 面の失敗で他を止めない */ }
+      try { renderSleepRhythm(); } catch (e2) { /* 同上 */ }
+    }
+    /** 初回の描画のときだけ: 保存した選択を戻し、ボタンとテーマ切替を配線する。 */
+    function setupSleepControls() {
+      if (SL_WIRED) return;
+      SL_WIRED = true;
+      SL_RANGE = slPrefGet('range', Object.keys(SL_RANGE_DAYS), SL_RANGE);
+      SL_UNIT = slPrefGet('unit', ['day', 'week', 'month'], SL_UNIT);
+      function wire(id, attr, set) {
+        var seg = el(id);
+        if (!seg) return;
+        var bs = seg.querySelectorAll('button');
+        for (var i = 0; i < bs.length; i++) {
+          (function (b) {
+            b.addEventListener('click', function () {
+              set(b.getAttribute(attr));
+              renderSleepControls();
+              slRedraw();
+            });
+          })(bs[i]);
+        }
+      }
+      wire('sleepRangeSeg', 'data-range', function (v) { SL_RANGE = v; slPrefSet('range', v); });
+      wire('sleepUnitSeg', 'data-unit', function (v) { SL_UNIT = v; slPrefSet('unit', v); });
+      // OS のテーマが変わったら描き直す（軸・点・面の色はテーマ変数から読む）。非表示中は表示されたときに描き直す
+      var panel = el('tab-sleep');
+      function redrawTheme() {
+        if (!SLEEP || !panel) return;
+        if (panel.hidden) { SL_THEME_STALE = true; return; }
+        slRedraw();
+        try { renderSleepForecast(); } catch (e) { /* noop */ }
+      }
+      if (window.matchMedia) {
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+        if (mq.addEventListener) mq.addEventListener('change', redrawTheme);
+        else if (mq.addListener) mq.addListener(redrawTheme);
+      }
+      if (panel && typeof MutationObserver === 'function') {
+        new MutationObserver(function () { if (!panel.hidden && SL_THEME_STALE) redrawTheme(); }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+      }
+    }
+    function renderSleepAll() {
+      setupSleepControls();
+      [renderSleepAsOf, renderSleepToday, renderSleepKpi, renderSleepRef, renderSleepInsights, renderSleepControls,
+        renderSleepRhythm].forEach(function (f) {
+        try { f(); } catch (e) { /* 1 つの面の失敗で他の面を止めない */ }
+      });
+      // 【UI/UX C-1】グラフは書体の読み込み後に描く。Chart.js は代替書体で測った文字幅を覚えるため、先に描くと
+      // y 軸の左端が切れる（「18:30」が「8:30」に見える）。読み込み後に書体が変わった場合は watchFonts が作り直す。
+      (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () { if (SLEEP) slDrawCharts(); });
+    }
+    function slDrawCharts() {
+      try { renderSleepCharts(); } catch (e) { /* 1 面の失敗で他を止めない */ }
+      try { renderSleepForecast(); } catch (e2) { /* 同上 */ }
+    }
+    /** 書体の読み込みが終わったら、睡眠とジーナ式のグラフを作り直す（表示中なら即・非表示なら次に表示したとき）。 */
+    function watchFonts() {
+      if (!(document.fonts && document.fonts.addEventListener)) return;
+      document.fonts.addEventListener('loadingdone', function () {
+        var sp = el('tab-sleep'), gp = el('tab-gina');
+        if (SLEEP) { if (sp && !sp.hidden) slDrawCharts(); else SL_THEME_STALE = true; }
+        if (chartsDrawn) {
+          if (gp && !gp.hidden) { try { renderCharts(); } catch (e) { /* noop */ } }
+          else { try { charts.forEach(function (c) { c.destroy(); }); } catch (e2) { /* noop */ } charts = []; chartsDrawn = false; }
+        }
+      });
+    }
+    /** 睡眠タブの payload を取りに行く（初めて開いたときだけ呼ばれる）。 */
+    function loadSleepTab() {
+      var st = el('sleepState'), body = el('sleepBody');
+      function show(text) { if (st) { st.hidden = false; st.textContent = text; } if (body) body.hidden = true; }
+      function again(text) { sleepLoaded = false; SLEEP = null; show(text); }   // 次に開いたとき取り直す
+      show('読み込んでいます');
+      if (!(window.google && google.script && google.script.run)) { again('睡眠のデータを読み込めませんでした'); return; }
+      google.script.run
+        .withSuccessHandler(function (p) {
+          try {
+            if (!p || p.ok !== true) { again('睡眠のデータを読み込めませんでした'); return; }
+            if (p.empty) { again('睡眠の記録がまだありません。ぴよログで『寝る』『起きる』を記録すると表示されます'); return; }
+            SLEEP = p;
+            if (st) st.hidden = true;
+            if (body) body.hidden = false;   // グラフは表示してから描く（非表示中は canvas の高さが 0）
+            renderSleepAll();
+          } catch (e) { again('睡眠のデータを読み込めませんでした'); }
+        })
+        .withFailureHandler(function () { again('睡眠のデータを読み込めませんでした'); })
+        .sleep();
+    }
+
     // ---- タブ切替（クリックベース＝GAS iframe で確実・ハッシュ非依存。グラフは初回表示時に遅延描画） ----
-    // T-439/DEC-070: 5 タブ。最後に開いていたタブを sessionStorage に置き、再読み込みで戻す
+    // T-439/DEC-070: 5 タブ（T-450 で睡眠を足して 6 タブ）。最後に開いていたタブを sessionStorage に置き、再読み込みで戻す
     //   （保存値は TAB_IDS で検証する＝旧 id「tab-summary」等や壊れた値は既定のホームへ落とす）。
-    var TAB_IDS = ['tab-home', 'tab-milk', 'tab-gina', 'tab-care', 'tab-settings'];
+    var TAB_IDS = ['tab-home', 'tab-milk', 'tab-sleep', 'tab-gina', 'tab-care', 'tab-settings'];
     // 予定・メモの payload（listCareBoard）を使うタブ＝ホームの「近い予定とメモ」・ジーナ式の「理想の一日」・予定・メモ
     var PLAN_TABS = ['tab-home', 'tab-gina', 'tab-care'];
     var TAB_STORE_KEY = 'gina.dash.tab';
@@ -3359,6 +4135,10 @@
         if (PLAN_TABS.indexOf(target) >= 0 && !planLoaded) {
           planLoaded = true;
           try { loadPlanBoard(); } catch (e) { /* 予定・メモの失敗は致命的でない */ }
+        }
+        if (target === 'tab-sleep' && !sleepLoaded) {
+          sleepLoaded = true;   // 初回に開いたときだけ取りに行く（失敗・記録なしのときは loadSleepTab が戻す＝次に開いたとき取り直す）
+          try { loadSleepTab(); } catch (e) { /* 睡眠の失敗は他のタブを巻き添えにしない */ }
         }
         if (target === 'tab-gina' && !chartsDrawn) {
           chartsDrawn = true;
@@ -3424,6 +4204,7 @@
       try { setupHome(); } catch (e) { /* ホームのボタン（タブへ移るだけ）の配線（T-439） */ }
       setupTabs();
       watchTheme();
+      try { watchFonts(); } catch (e) { /* 書体の読み込み後の作り直し（グラフの軸の文字幅） */ }
       try { setupLiveRefresh(); } catch (e) { /* 画面へ戻ったときの取り直し（T-439） */ }
     }
 
