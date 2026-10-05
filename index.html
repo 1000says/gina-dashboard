@@ -1366,10 +1366,11 @@
       var cats = d.categories || {};
       var rows = AXIS_ORDER.map(function (k) {
         var v = cats[k];
-        // T-455/DEC-084: 遅い授乳が要らなかった日（朝まで眠れ、量と体重も問題なし）はラストミルクを評価しない。「—」だけにせず理由を言う
+        // T-455/DEC-084: 遅い授乳が要らなかった日（22 時台の授乳なしで夜を越せ、量と体重も問題なし）はラストミルクを評価しない。「—」だけにせず理由を言う。
+        // 夜に想定の回数まで（3〜6 か月なら早朝 1 回）飲んだ日も含む＝「朝まで眠れた」とは言わない（G3 Major-3・P-07）
         if (v == null && k === 'lastFeed' && d.lateFeedReason === 'not_needed') {
           return '<div class="axis-row"><span class="axis-name">' + AXIS_LABELS[k] + '</span>'
-            + '<span class="axis-none">朝まで眠れた日なので評価しません</span><span class="axis-val muted">—</span></div>';
+            + '<span class="axis-none">22時台の授乳なしで夜を越せた日なので評価しません</span><span class="axis-val muted">—</span></div>';
         }
         if (v == null) {
           return '<div class="axis-row"><span class="axis-name">' + AXIS_LABELS[k] + '</span>'
