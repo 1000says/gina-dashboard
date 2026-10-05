@@ -1366,6 +1366,11 @@
       var cats = d.categories || {};
       var rows = AXIS_ORDER.map(function (k) {
         var v = cats[k];
+        // T-455/DEC-084: 遅い授乳が要らなかった日（朝まで眠れ、量と体重も問題なし）はラストミルクを評価しない。「—」だけにせず理由を言う
+        if (v == null && k === 'lastFeed' && d.lateFeedReason === 'not_needed') {
+          return '<div class="axis-row"><span class="axis-name">' + AXIS_LABELS[k] + '</span>'
+            + '<span class="axis-none">朝まで眠れた日なので評価しません</span><span class="axis-val muted">—</span></div>';
+        }
         if (v == null) {
           return '<div class="axis-row"><span class="axis-name">' + AXIS_LABELS[k] + '</span>'
             + '<div class="gauge"><span style="width:0"></span></div>'
