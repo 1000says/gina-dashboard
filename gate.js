@@ -357,8 +357,11 @@
       var g = root.google && root.google.accounts && root.google.accounts.id;
       if (!g) { if (tries++ < 100) return setTimeout(wait, 100); if (state.ui) state.ui.showError('gis'); return; }
       installRunner();
+      // use_fedcm_for_button: ボタンでのログインも FedCM を通す。通さないと Chrome が「このサイトで使ったアカウント」と
+      //   覚えず、次から自動の再ログイン（auto_select）が効かない（OI-104 G2 MUST-1・2026-10-15）。
+      // button_auto_select: ボタンを押したとき、戻ってきた人は選択画面を飛ばす。
       g.initialize({ client_id: cfg.clientId, callback: onCredential, auto_select: true, cancel_on_tap_outside: false,
-        use_fedcm_for_prompt: true, itp_support: true });
+        use_fedcm_for_prompt: true, use_fedcm_for_button: true, button_auto_select: true, itp_support: true });
       if (buttonEl) g.renderButton(buttonEl, { type: 'standard', theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill', locale: 'ja' });
       state.gis = g;
       if (state.promptPending) promptSilently();
