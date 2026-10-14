@@ -634,11 +634,23 @@
     .gate-band .gb-sun { fill: var(--warn); }
     .gate-band .gb-tick { stroke: var(--band-edge); stroke-width: 1; }
     .gate h1 { font-size: 26px; font-weight: 900; margin: 0 0 10px; color: var(--ink); }
-    .gate-msg { font-size: 15px; line-height: 1.75; color: var(--ink); margin: 0 0 20px; }
+    .gate-msg-row { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 20px; }
+    .gate-msg { font-size: 15px; line-height: 1.75; color: var(--ink); margin: 0; }
     .gate.is-error .gate-msg { color: var(--bad); font-weight: 700; }
+    /* 状態のアイコン（VDR-07・2026-10-15 uiux U9-1）: 失敗と期限切れだけ。文言と対で使う */
+    .gate-alert { flex: none; width: 20px; height: 20px; margin-top: 3px; display: none; }
+    .gate-alert path, .gate-alert circle { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .gate.is-error .gate-alert { display: block; color: var(--bad); }
+    .gate.is-expired .gate-alert { display: block; color: var(--warn); }
+    .gate-slot { position: relative; min-height: 44px; }
     .gate-button { min-height: 44px; }
     .gate-button[hidden] { display: none; }
     .gate.is-loading .gate-button { visibility: hidden; }   /* 読み込み中はボタンを見せない（GIS の描画は保つ・uiux m-6） */
+    /* 読み込み中はボタンの場所に回る輪（uiux U9-1）。動きを減らす設定では止まった輪になる */
+    .gate-spinner { display: none; position: absolute; left: 0; top: 8px; width: 28px; height: 28px; border-radius: 50%;
+      border: 3px solid var(--band-edge); border-top-color: var(--accent); animation: gate-spin .9s linear infinite; }
+    .gate.is-loading .gate-spinner { display: block; }
+    @keyframes gate-spin { to { transform: rotate(360deg); } }
     .gate-hint { font-size: 12px; color: var(--sub); margin: 18px 0 0; line-height: 1.7; }
     #app[hidden] { display: none; }
     /* ==== 睡眠タブ（T-450・DEC-079）=====================================================
@@ -720,12 +732,18 @@
 </head>
 <body>
   <!-- DEC-077: ログインの画面。ログインして閲覧者リストにある人だけが中へ入れる（データはその後に届く）。 -->
-  <div id="gate" class="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+  <div id="gate" class="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle" aria-describedby="gateMsg">
     <div class="gate-card">
       <svg class="gate-band" viewBox="0 0 240 30" aria-hidden="true"><rect x="0.5" y="2.5" width="239" height="18" rx="4" class="gb-night"/><rect x="70" y="2.5" width="120" height="18" class="gb-day"/><circle cx="130" cy="11.5" r="4.5" class="gb-sun"/><path d="M0.5 23v5M70 23v5M190 23v5M239.5 23v5" class="gb-tick"/></svg>
       <h1 id="gateTitle" tabindex="-1">育児ログ評価</h1>
-      <p id="gateMsg" class="gate-msg" aria-live="polite">記録を見るには、登録した Google アカウントでログインします。</p>
-      <div id="gateButton" class="gate-button"></div>
+      <div class="gate-msg-row">
+        <svg class="gate-alert" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+        <p id="gateMsg" class="gate-msg" aria-live="polite">記録を見るには、登録した Google アカウントでログインします。</p>
+      </div>
+      <div class="gate-slot">
+        <div id="gateButton" class="gate-button"></div>
+        <div class="gate-spinner" aria-hidden="true"></div>
+      </div>
       <p id="gateHint" class="gate-hint">ログインできるのは、この画面の持ち主が登録したアカウントだけです。</p>
     </div>
   </div>
@@ -4634,31 +4652,61 @@
     // ---- ログインの画面（gate.js が呼ぶ） ----
     var GATE_TEXT = {
       start: '記録を見るには、登録した Google アカウントでログインします。',
+      auto: 'Google アカウントでログインしています…',
+      signedout: '別のタブでログアウトしました。続けるには、もう一度ログインします。',
+      loading: '読み込んでいます…',
       expired: 'ログインの有効期限が切れました。もう一度ログインすると、続きから表示します。',
       denied: 'このアカウントは登録されていません。持ち主に「設定・記録」タブの「ダッシュボードを見てよい Google アカウント」へ追加してもらってください。',
       gis: 'Google のログイン部品を読み込めませんでした。通信を確かめて、ページを読み込み直してください。',
       config: 'ログインの設定がまだです（OAuth クライアント ID が未設定）。持ち主が config.js を設定すると使えます。',
       load: '記録を読み込めませんでした。通信を確かめて、ページを読み込み直してください。'
     };
+    var GATE_PREV_FOCUS = null;   // ログインの画面を閉じたらフォーカスを戻す先（uiux U4-1）
     function gateShow(kind, extra) {
       var g = el('gate'), m = el('gateMsg');
+      if (g.hidden) GATE_PREV_FOCUS = document.activeElement;
       m.textContent = GATE_TEXT[kind] + (extra ? '（' + extra + '）' : '');
       g.classList.toggle('is-error', kind === 'denied' || kind === 'gis' || kind === 'config' || kind === 'load');
       g.classList.remove('is-loading');
+      g.classList.toggle('is-expired', kind === 'expired');
+      g.removeAttribute('aria-busy');
       el('gateButton').hidden = (kind === 'gis' || kind === 'config');
       g.hidden = false;
       // uiux M-3: モーダルとして振る舞う＝後ろの画面を操作できなくし、見出しへフォーカスを移す
       el('app').inert = true;
       try { el('gateTitle').focus(); } catch (eF) { /* noop */ }
     }
+    /** 読み込み中の表示（ボタンを隠して輪を出す）。 */
+    function gateLoading(text) {
+      var g = el('gate');
+      el('gateMsg').textContent = text;
+      g.classList.remove('is-error', 'is-expired');
+      g.classList.add('is-loading');
+      g.setAttribute('aria-busy', 'true');
+    }
     function gateHide() {
-      el('gate').hidden = true;
+      var g = el('gate');
+      g.hidden = true;
+      g.removeAttribute('aria-busy');
       el('app').inert = false;
+      var f = GATE_PREV_FOCUS; GATE_PREV_FOCUS = null;
+      if (f && f !== document.body && document.contains(f) && typeof f.focus === 'function') { try { f.focus(); } catch (eF) { /* noop */ } }
     }
     GinaGate.setUi({
-      showLogin: function (reason) { gateShow(reason === 'expired' ? 'expired' : 'start'); },
-      hideLogin: function () { if (!el('app').hidden) gateHide(); },
-      showDenied: function (email) { GinaGate.signOut(); gateShow('denied', email); },
+      // silent＝自動ログインを試している間。起動時は「入っています…」を出し、使っている最中は画面を隠さない
+      //   （数秒で済むことが多い）。自動で取れなければ gate.js が silent=false で呼び直し、ボタンを出す
+      showLogin: function (reason, silent) {
+        if (silent) {
+          if (!el('app').hidden) return;
+          gateLoading(GATE_TEXT.auto);
+          return;
+        }
+        gateShow(reason === 'expired' || reason === 'signedout' ? reason : 'start');
+      },
+      // 起動時は、ログインできても記録が届くまで画面へ入れない＝ボタンを隠して「読み込んでいます」に戻す（uiux U3-1）
+      hideLogin: function () { if (!el('app').hidden) gateHide(); else gateLoading(GATE_TEXT.loading); },
+      // 登録されていないアカウント＝このタブだけ消す（他のタブの正しいログインまで消さない）
+      showDenied: function (email) { GinaGate.signOut(true); gateShow('denied', email); },
       showError: function (kind) { gateShow(kind); }
     });
 
@@ -4667,8 +4715,7 @@
       GinaGate.installRunner();
       if (!(window.GINA_CONFIG && GINA_CONFIG.clientId && GINA_CONFIG.apiUrl)) { gateShow('config'); return; }
       GinaGate.initGis(el('gateButton'));
-      el('gateMsg').textContent = '読み込んでいます…';
-      el('gate').classList.add('is-loading');
+      gateLoading(GATE_TEXT.loading);
       GinaGate.call('dashboard', []).then(function (p) {
         applyPayload(p);
         el('app').hidden = false;
