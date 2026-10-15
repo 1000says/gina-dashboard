@@ -579,6 +579,13 @@
     header.page h1 { font-size: 24px; font-weight: 900; letter-spacing: .01em; margin: 0; }
     header.page p { font-size: 13px; }
     .page-account { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--sub); min-width: 0; }
+    /* 使っている途中のログインの取り直し（OI-103 ②・uiux U3-2）。文字は .page-account の色を継ぐ・輪は読み込み中の輪と同じ形 */
+    /* role=status の枠は常に置き、中身を入れ替える（表示を切り替えると読み上げられないことがある・uiux U4-1） */
+    .auth-status { display: inline-flex; align-items: center; gap: 6px; }
+    .auth-status:empty { display: none; }
+    .auth-status .as-short { display: none; }
+    .auth-status:not(:empty)::before { content: ''; flex: none; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--band-edge);
+      border-top-color: var(--accent); animation: gate-spin .9s linear infinite; }
     .whoami { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 22ch; }
     .link-btn { background: none; border: 0; padding: 8px 4px; font: inherit; font-size: 12px; font-weight: 700;
       color: var(--accent); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 44px; }
@@ -616,6 +623,10 @@
       /* 本題（今日の帯）までの頭を詰める（uiux M-4）: 副題とアカウント名を隠し、h1 とログアウトを 1 行に */
       header.page { flex-wrap: nowrap; align-items: center; padding-bottom: 4px; }
       header.page p, .whoami { display: none; }
+      /* 狭い画面では短い文字にして見出しを折り返させない。読み上げは長い文のまま（見た目だけ隠す） */
+      .auth-status { white-space: nowrap; }
+      .auth-status .as-short { display: inline; }
+      .auth-status .as-long { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }   /* .u-sr と同じ宣言 */
     }
     @media (max-width: 720px) and (prefers-color-scheme: dark) {
       .tabbar { border-top-color: var(--band-edge); box-shadow: none; }   /* dark で罫と影が効かない（1.25:1）＝専用の罫で境目を出す（uiux m-1） */
@@ -754,6 +765,7 @@
         <p>今日の記録と、ジーナ式の目安・評価</p>
       </div>
       <div class="page-account">
+        <span id="authStatus" class="auth-status" role="status"></span>
         <span id="whoami" class="whoami"></span>
         <button type="button" id="signOut" class="link-btn">ログアウト</button>
       </div>
@@ -4662,8 +4674,23 @@
       load: '記録を読み込めませんでした。通信を確かめて、ページを読み込み直してください。'
     };
     var GATE_PREV_FOCUS = null;   // ログインの画面を閉じたらフォーカスを戻す先（uiux U4-1）
+    // 自動ログインの文言は 300ms 遅らせて出す（OI-103 ②・uiux U3-3）。Google がすぐ「出さない」と決めたとき、
+    //   「読み込んでいます」→「ログインしています」→「ログインします」と短い間に 3 回変わり、読み上げが続くのを防ぐ
+    var GATE_AUTO_TIMER = null;
+    var GATE_AUTO_DELAY_MS = 300;
+    function gateCancelAuto() { clearTimeout(GATE_AUTO_TIMER); GATE_AUTO_TIMER = null; }
+    function authStatus(on) {
+      var box = el('authStatus');
+      if (!on) { box.textContent = ''; return; }
+      if (box.firstChild) return;
+      var l = document.createElement('span'); l.className = 'as-long'; l.textContent = 'ログインを更新しています…';
+      var sh = document.createElement('span'); sh.className = 'as-short'; sh.setAttribute('aria-hidden', 'true'); sh.textContent = '更新中…';
+      box.appendChild(l); box.appendChild(sh);
+    }
     function gateShow(kind, extra) {
       var g = el('gate'), m = el('gateMsg');
+      gateCancelAuto();
+      authStatus(false);
       if (g.hidden) GATE_PREV_FOCUS = document.activeElement;
       m.textContent = GATE_TEXT[kind] + (extra ? '（' + extra + '）' : '');
       g.classList.toggle('is-error', kind === 'denied' || kind === 'gis' || kind === 'config' || kind === 'load');
@@ -4679,6 +4706,7 @@
     /** 読み込み中の表示（ボタンを隠して輪を出す）。 */
     function gateLoading(text) {
       var g = el('gate');
+      gateCancelAuto();
       el('gateMsg').textContent = text;
       g.classList.remove('is-error', 'is-expired');
       g.classList.add('is-loading');
@@ -4697,14 +4725,22 @@
       //   （数秒で済むことが多い）。自動で取れなければ gate.js が silent=false で呼び直し、ボタンを出す
       showLogin: function (reason, silent) {
         if (silent) {
-          if (!el('app').hidden) return;
-          gateLoading(GATE_TEXT.auto);
+          // 使っている最中は画面を隠さず、ヘッダーに小さく出す（uiux U3-2）
+          if (!el('app').hidden) { authStatus(true); return; }
+          gateLoading(el('gateMsg').textContent || GATE_TEXT.loading);
+          GATE_AUTO_TIMER = setTimeout(function () {
+            GATE_AUTO_TIMER = null;
+            if (el('gate').classList.contains('is-loading')) el('gateMsg').textContent = GATE_TEXT.auto;
+          }, GATE_AUTO_DELAY_MS);
           return;
         }
         gateShow(reason === 'expired' || reason === 'signedout' ? reason : 'start');
       },
       // 起動時は、ログインできても記録が届くまで画面へ入れない＝ボタンを隠して「読み込んでいます」に戻す（uiux U3-1）
-      hideLogin: function () { if (!el('app').hidden) gateHide(); else gateLoading(GATE_TEXT.loading); },
+      hideLogin: function () {
+        authStatus(false);
+        if (!el('app').hidden) gateHide(); else gateLoading(GATE_TEXT.loading);
+      },
       // 登録されていないアカウント＝このタブだけ消す（他のタブの正しいログインまで消さない）
       showDenied: function (email) { GinaGate.signOut(true); gateShow('denied', email); },
       showError: function (kind) { gateShow(kind); }
