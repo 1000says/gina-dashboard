@@ -128,8 +128,12 @@
       background: var(--card-2); border-radius: var(--r-sm); padding: 10px 12px; margin-top: 4px;
     }
     .axes { margin-top: 16px; display: grid; gap: 10px; }
-    .axis-row { display: grid; grid-template-columns: 84px 1fr 38px; align-items: center; gap: 10px; }
+    /* OI-105 uiux: 「ふだん 22:25」が文字の拡大でも収まるよう 84→92px（ゲージは 8px 縮むだけ） */
+    .axis-row { display: grid; grid-template-columns: 92px 1fr 38px; align-items: center; gap: 10px; }
     .axis-name { font-size: 12px; color: var(--sub); font-weight: 600; }
+    /* T-456/OI-105: 点数の物差し（その子のふだん＝直近 4 週の中央値）を軸名の下に小さく添える */
+    .axis-usual { display: block; font-size: 12px; font-weight: 500; line-height: 1.3; font-variant-numeric: tabular-nums; }
+    .summary .note-info { text-wrap: pretty; }
     .gauge { height: 8px; border-radius: 999px; background: var(--card-2); overflow: hidden; }
     .gauge > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
     .axis-val { font-size: 13px; font-weight: 700; text-align: right; }
@@ -1394,34 +1398,66 @@
         + '<span class="score-unit">点 / 100</span>'
         + '<span class="badge" style="background:' + col + '">' + escHtml(d.grade || '判定') + '</span></div>');
       var cats = d.categories || {};
+      // T-456/OI-105・DEC-086: 点数はその子の「ふだん」（直近 4 週の中央値）とのそろい具合。軸ごとのふだんの値を添える
+      var basis = d.basis || {}, usual = d.baseline || {};
+      // 記録が 7 日分たまるまでの軸は、従来どおりジーナ式の目安で採点している＝そのことも軸ごとに言う（uiux Major-1）
+      var nameOf = function (k) {
+        var u = (basis[k] === 'self') ? usualTextOf(k, usual[k]) : '';
+        var sub = u ? 'ふだん ' + escHtml(u) : (basis[k] === 'gina' ? 'ジーナ式の目安' : '');
+        return '<span class="axis-name">' + AXIS_LABELS[k] + (sub ? ' <span class="axis-usual">' + sub + '</span>' : '') + '</span>';
+      };
       var rows = AXIS_ORDER.map(function (k) {
         var v = cats[k];
         // T-455/DEC-084: 遅い授乳が要らなかった日（22 時台の授乳なしで夜を越せ、量と体重も問題なし）はラストミルクを評価しない。「—」だけにせず理由を言う。
         // 夜に想定の回数まで（3〜6 か月なら早朝 1 回）飲んだ日も含む＝「朝まで眠れた」とは言わない（G3 Major-3・P-07）
         if (v == null && k === 'lastFeed' && d.lateFeedReason === 'not_needed') {
-          return '<div class="axis-row"><span class="axis-name">' + AXIS_LABELS[k] + '</span>'
+          return '<div class="axis-row">' + nameOf(k)
             + '<span class="axis-none">22時台の授乳なしで夜を越せた日なので評価しません</span><span class="axis-val muted">—</span></div>';
         }
         if (v == null) {
-          return '<div class="axis-row"><span class="axis-name">' + AXIS_LABELS[k] + '</span>'
+          return '<div class="axis-row">' + nameOf(k)
             + '<div class="gauge"><span style="width:0"></span></div>'
             + '<span class="axis-val muted">—</span></div>';
         }
-        return '<div class="axis-row"><span class="axis-name">' + AXIS_LABELS[k] + '</span>'
+        return '<div class="axis-row">' + nameOf(k)
           + '<div class="gauge"><span style="width:' + v + '%;background:var(--gc)"></span></div>'
           + '<span class="axis-val u-tnum">' + v + '</span></div>';
       });
       parts.push('<div class="axes">' + rows.join('') + '</div>');
+      var selfBasis = AXIS_ORDER.some(function (k) { return basis[k] === 'self'; });
+      var ginaBasis = AXIS_ORDER.some(function (k) { return basis[k] === 'gina'; });
+      if (selfBasis) {
+        // uiux Major-2: 物差しと、その日の時刻を見る場所を言う。否定の対比（〜ではありません）は置かない
+        parts.push('<div class="note-info">'
+          + (ginaBasis ? '「ふだん」がある項目は、ふだん（直近4週）にどれだけ近かったかで点を付けています。ほかの項目は、記録がたまるまでジーナ式の目安で付けています。'
+                       : '点数は、ふだん（直近4週）の時刻や長さにどれだけ近かったかで付けています。')
+          + 'その日の時刻は「ジーナ式」タブの一日の帯で見られます</div>');
+      }
       // T-412: 2026-07-26 に判定軸を4→6へ拡張し重みを変えたため、履歴全体が再スコアされている。
       // 旧基準のスコアを併記して「ある日から急に変わった」を説明可能にする（PLAN-T412 §2-5）。
       // VDR M-4: 警告スタイル（.gated-note＝アンバー・weight600）を中立情報に再利用すると
       // 「点数が下がった通告」に読める。基準を変えたのは運営側の都合であって記録した側の行動ではない。
       // 中立スタイル（.note-info）で、点差ではなく**基準変更**を主語にして伝える。
-      if (d.legacyScore != null && d.legacyScore !== d.score) {
+      // T-456/OI-105: ふだんを物差しにした日は、上の 1 行が基準を説明する（旧基準との差は物差しが違うので並べない）
+      if (!selfBasis && d.legacyScore != null && d.legacyScore !== d.score) {
         parts.push('<div class="note-info">2026-07-26 に就寝・ラストミルクを加えた6軸へ基準を変更しました'
           + '（記録の内容は同じです）。旧基準では ' + d.legacyScore + '点でした</div>');
       }
       box.innerHTML = parts.join('');
+    }
+
+    /**
+     * T-456/OI-105: ふだんの値の表記（時刻はそのまま "HH:MM"・長さは "1h05"／"45分"・夜間授乳は "1回"）。
+     * 値は scoreSeries の baseline（score.js の baselineSummaryOf）＝サーバが組んだ値をそのまま出す。
+     */
+    function usualTextOf(k, b) {
+      if (!b || b.center == null || b.center === '') return '';
+      if (k === 'wakeUp' || k === 'bedtime' || k === 'lastFeed') return String(b.center);
+      var n = Number(b.center);
+      if (!isFinite(n)) return '';
+      if (k === 'nightFeed') return n + '回';
+      var h = Math.floor(n / 60), mi = Math.round(n % 60);
+      return h ? (h + 'h' + (mi < 10 ? '0' : '') + mi) : (mi + '分');
     }
 
     // ---- 一日の帯（signature・24時間）----
